@@ -1,0 +1,30 @@
+# Loaded by the CLI layer and passed to squad.guard as a plain dict.
+default: deny
+
+tiers:
+  tier0:
+    - read_file
+    - search_code
+    - repo_map
+    - git_diff
+    - git_status
+    - run_security_scan
+  tier1:
+    - edit_file
+    - git_commit
+  tier2:
+    - install_dependencies
+  tier3:
+    - git_push
+    - raw_shell
+    - credential_access
+    - invoke_squad
+    - admin_elevation
+
+blocked_paths:
+  - "%LOCALAPPDATA%\\squad\\"
+  - ".git/"
+  - ".ssh/"
+  - ".aws/"
+  - ".azure/"
+  - ".git-credentials"

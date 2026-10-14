@@ -1,0 +1,19 @@
+# Placeholder prices. Update from provider docs before use.
+as_of: "2026-10-01"
+
+models:
+  openrouter/anthropic/claude-opus-5.5:
+    input_per_1m: 4.00
+    output_per_1m: 20.00
+  openrouter/anthropic/claude-sonnet-5.5:
+    input_per_1m: 2.00
+    output_per_1m: 10.00
+  openrouter/deepseek/deepseek-v4-flash:
+    input_per_1m: 0.14
+    output_per_1m: 0.28
+  openrouter/google/gemini-3.8-flash:
+    input_per_1m: 0.75
+    output_per_1m: 3.75
+  openrouter/openai/gpt-6-luna:
+    input_per_1m: 0.10
+    output_per_1m: 0.50

@@ -1,0 +1,36 @@
+
+---
+
+## 📄 pyproject.toml
+
+```toml
+[project]
+name = "squad"
+version = "0.0.0"
+description = "Windows-first AI development crew — guarded, budgeted, audited."
+requires-python = ">=3.11"
+dependencies = [
+    "typer",
+    "rich",
+    "pyyaml",
+    "httpx",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "ruff",
+    "bandit",
+    "pip-audit",
+]
+
+[project.scripts]
+squad = "squad.cli:app"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
