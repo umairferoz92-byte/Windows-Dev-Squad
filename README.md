@@ -1,5 +1,9 @@
 # Windows Dev Squad (`squad`)
 
+<p align="center">
+  <video src="docs/media/squad-intro.mp4" controls width="720" poster="docs/media/squad-intro.jpg"></video>
+</p>
+
 A Windows-first dual toolkit serving as a **Cyber Security Expert** & **Developer Coding Assistant** powered by a crew of named agents (coordinator, coder, tester, security reviewer, quality reviewer).
 
 - **Security Expert (`squad security`)**: Multi-phase security scanning (Nightwing Phase A/B/C), Alfred tool manager, Oracle reports (PDF/HTML/MD/CSV/JIRA), SQLite history, role-based access, and signed audit logs.
