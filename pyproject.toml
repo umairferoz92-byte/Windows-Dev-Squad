@@ -1,0 +1,64 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "windows-dev-squad"
+version = "0.2.0"
+description = "Windows Dev Squad (squad): a guard-railed, budget-controlled multi-agent coding crew for Windows."
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "Windows Dev Squad" }]
+dependencies = [
+    "typer==0.27.3",
+    "rich==15.0.0",
+    "PyYAML==6.0.3",
+    "httpx==0.28.1",
+    "fastapi==0.162.4",
+    "uvicorn==0.54.0",
+    "webauthn==3.0.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==9.1.1",
+    "ruff==0.17.0",
+    "bandit==1.9.4",
+    "pip-audit==2.10.1",
+]
+# Optional ML tier: intent + code-security classifiers for the chatbot.
+# Kept optional because tensorflow-cpu is a large wheel; the chat degrades
+# gracefully to the rule-based tier when it is not installed.
+ml = [
+    "tensorflow-cpu>=2.18,<3",
+    "numpy>=1.26",
+]
+
+[project.scripts]
+squad = "squad.cli.app:main"
+
+[tool.setuptools.packages.find]
+include = ["squad*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = ["practice"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+addopts = "-ra --strict-markers --ignore=practice"
+testpaths = ["tests"]
+filterwarnings = [
+    "ignore:::fastapi.testclient",
+    "ignore:::starlette",
+]
+
+[tool.bandit]
+# B404 (import subprocess) and B603 (subprocess call) are skipped because this
+# project uses subprocess with argument lists only (never shell=True), and the
+# guard/executor boundary is exercised by dedicated adversarial tests later.
+exclude_dirs = ["tests", "practice", ".venv"]
+skips = ["B404", "B603"]

@@ -1,0 +1,8 @@
+# Windows Dev Squad — model prices (USD per 1M tokens). Unknown models are
+# BLOCKED by the budget layer. Replace these example values with the real
+# OpenRouter model list before using a key.
+as_of: "2026-11-03"
+models:
+  openrouter/openai/gpt-4o-mini: { input: 0.15, output: 0.60 }
+  openrouter/anthropic/claude-3.5-haiku: { input: 0.80, output: 4.00 }
+  openrouter/google/gemini-flash-1.5: { input: 0.075, output: 0.30 }

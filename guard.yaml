@@ -1,0 +1,54 @@
+# Windows Dev Squad — guard policy.
+# Loaded by the CLI layer and passed to the guard module as a plain dict. The
+# guard module itself is standard-library only. Per-repo write_scope and check
+# commands live in squad.yaml; the CLI merges them before calling evaluate().
+
+version: 1
+
+# Unknown tools default to "ask" (default-deny).
+default_deny: true
+
+# Absolute directories agents may never write (rule 3: config/ledger/audit/data
+# locations are filled in by the CLI from %LOCALAPPDATA%\squad\ at run time).
+blocked_paths: []
+
+# Path-component names that are always blocked (rule 7: credential locations).
+blocked_components:
+  - .ssh
+  - .aws
+  - .azure
+  - .gnupg
+  - .git-credentials
+
+# Files agents must never change (rule 3).
+sensitive_files:
+  - squad.yaml
+  - guard.yaml
+  - prices.yaml
+  - .env
+  - .env.example
+
+# Directories that require approval to write into (Tier 1 "without approval").
+sensitive_dirs:
+  - .git
+  - .github
+
+# Tool tiers. See docs/SPEC.md "Typed tools".
+tools:
+  read_file: { tier: 0 }
+  search_code: { tier: 0 }
+  repo_map: { tier: 0 }
+  git_diff: { tier: 0 }
+  git_status: { tier: 0 }
+  run_security_scan: { tier: 0 }
+  run_tests: { tier: 0, requires_isolation_level: 1 }
+  run_lint: { tier: 0, requires_isolation_level: 1 }
+  run_typecheck: { tier: 0, requires_isolation_level: 1 }
+  edit_file: { tier: 1 }
+  git_commit: { tier: 1 }
+  install_dependencies: { tier: 2 }
+  git_push: { tier: 3 }
+  raw_shell: { tier: 3 }
+  credential_access: { tier: 3 }
+  invoke_squad: { tier: 3 }
+  admin_elevation: { tier: 3 }

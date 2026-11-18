@@ -1,0 +1,64 @@
+# Windows Dev Squad — main configuration (template).
+# At runtime the active config lives in %LOCALAPPDATA%\squad\squad.yaml and is
+# copied from this template on first run. Agents must never modify this file.
+
+version: 1
+
+crew:
+  size: 5               # how many agents work a task (1..max_agents)
+  max_agents: 10        # hard cap
+  max_running: 1        # v0.1 runs agents sequentially (Phase 8 raises this)
+  names: []             # optional explicit names; empty = auto-named
+  presets: {}           # saved crew presets (Phase 6+)
+
+roles:
+  coordinator:
+    model_alias: captain
+  coder:
+    model_alias: ironman
+  tester:
+    model_alias: tester
+  security:
+    model_alias: batman
+  quality:
+    model_alias: quality
+
+providers:
+  allowed_providers: [openrouter]   # Phase 4: add claude, deepseek, gemini, openai
+  default: openrouter
+
+models:
+  # allowed_models per role; any model not listed is blocked. Reviewers use a
+  # different model from the coder. Example IDs — replace with your choices.
+  planner: ["openrouter/anthropic/claude-3.5-haiku"]
+  strong: ["openrouter/anthropic/claude-3.5-haiku"]
+  worker: ["openrouter/openai/gpt-4o-mini"]
+  reviewer: ["openrouter/anthropic/claude-3.5-haiku"]
+
+budget:
+  mode: balanced          # economy | balanced | max
+  per_call:
+    input_tokens: 20000
+    output_tokens: 4000
+  per_agent: 0            # 0 = unlimited until set
+  per_task: 0
+  per_day: 0
+  per_month: 0
+  per_provider: {}
+  spike_window_seconds: 300
+  spike_limit: 0
+
+repo:
+  write_scope:
+    source: []            # Ironman's write paths (configured per repo)
+    tests: []             # Tester's write paths
+  check_commands:          # run via `squad check`; `python` resolves to the venv interpreter
+    test: ["python", "-m", "pytest", "-q"]
+    lint: ["python", "-m", "ruff", "check", "squad", "tests"]
+    typecheck: []          # no type checker configured yet
+    security_scan: ["python", "-m", "bandit", "-r", "squad", "-c", "pyproject.toml"]
+  diff_cap_lines: 400
+
+isolation:
+  minimum_for_trusted: 2        # repos that matter need Level 2+
+  low_priv_user: "squad-agent"  # default low-privilege account for Level 1
