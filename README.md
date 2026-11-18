@@ -1,7 +1,9 @@
 # Windows Dev Squad (`squad`)
 
 <p align="center">
-  <video src="docs/media/squad-intro.mp4" controls width="720" poster="docs/media/squad-intro.jpg"></video>
+  <a href="docs/media/squad-intro.mp4">
+    <img src="docs/media/squad-intro.jpg" alt="Intro Video" width="720">
+  </a>
 </p>
 
 A Windows-first dual toolkit serving as a **Cyber Security Expert** & **Developer Coding Assistant** powered by a crew of named agents (coordinator, coder, tester, security reviewer, quality reviewer).
