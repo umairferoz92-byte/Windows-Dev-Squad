@@ -28,9 +28,7 @@ def test_doctor_setup_help():
 
 def test_check_with_temp_config(tmp_path):
     cfg = tmp_path / "squad.yaml"
-    cfg.write_text(
-        "repo:\n  check_commands:\n    test: ['python', '-c', \"print('hi')\"]\n", encoding="utf-8"
-    )
+    cfg.write_text("repo:\n  check_commands:\n    test: ['python', '-c', \"print('hi')\"]\n", encoding="utf-8")
     guard = tmp_path / "guard.yaml"
     guard.write_text("version: 1\n", encoding="utf-8")
     result = runner.invoke(app, ["check", "--config", str(cfg), "--guard", str(guard)])

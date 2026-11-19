@@ -9,9 +9,7 @@ MODEL = "openrouter/test/model"
 
 
 def _provider(handler, allowed=(MODEL,)):
-    client = httpx.Client(
-        base_url="https://openrouter.ai/api/v1", transport=httpx.MockTransport(handler)
-    )
+    client = httpx.Client(base_url="https://openrouter.ai/api/v1", transport=httpx.MockTransport(handler))
     return OpenRouterProvider("sk-test", allowed, client=client)
 
 

@@ -9,9 +9,7 @@ Asserts:
 
 from __future__ import annotations
 
-import pytest
-
-from squad.agent.oracle import Oracle, _finding_key, redact_evidence
+from squad.agent.oracle import Oracle, redact_evidence
 from squad.security_findings import SecurityFinding, SecuritySeverity
 
 
@@ -99,10 +97,14 @@ def test_html_rendering():
 
 
 def test_skipped_section():
-    oracle = Oracle(findings=[], target="http://t", skipped={
-        "active-scan": "operator declined Phase C consent",
-        "tls": "testssl.sh not installed",
-    })
+    oracle = Oracle(
+        findings=[],
+        target="http://t",
+        skipped={
+            "active-scan": "operator declined Phase C consent",
+            "tls": "testssl.sh not installed",
+        },
+    )
     md = oracle.to_markdown()
     assert "testssl.sh not installed" in md
     assert "operator declined Phase C consent" in md

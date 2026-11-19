@@ -1,7 +1,4 @@
 """Tests for the evaluation harness (Feature 2)."""
-import json
-import sqlite3
-from pathlib import Path
 
 from squad.eval.runner import EvalResult, EvalStore, git_commit, run_eval
 from squad.eval.tasks import GOLDEN_TASKS, GoldenTask, build_injection_repo
@@ -27,6 +24,7 @@ def test_store_records_and_summarizes(tmp_path):
 
 def pytest_approx(v):
     from pytest import approx
+
     return approx(v)
 
 

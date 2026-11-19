@@ -1,5 +1,4 @@
 """Durable run state and recovery (Feature 5): crash always lands in a known state."""
-import sqlite3
 
 import pytest
 
@@ -13,8 +12,14 @@ from squad.config.runstate import (
 
 def test_checkpoint_then_get(tmp_path):
     s = RunStateStore(tmp_path / "runs.sqlite")
-    rs = RunState(run_id="r1", task="fix test", plan={"phases": ["a", "b"]}, step=2,
-                  branch="feature/x", budget_used=0.4)
+    rs = RunState(
+        run_id="r1",
+        task="fix test",
+        plan={"phases": ["a", "b"]},
+        step=2,
+        branch="feature/x",
+        budget_used=0.4,
+    )
     s.checkpoint(rs)
     got = s.get("r1")
     assert got.step == 2
@@ -31,8 +36,8 @@ def test_checkpoint_overwrites_later_step(tmp_path):
 
 def test_unfinished_lists_only_running(tmp_path):
     s = RunStateStore(tmp_path / "runs.sqlite")
-    s.checkpoint(RunState(run_id="a", task="t", step=1))                 # RUNNING
-    s.checkpoint(RunState(run_id="b", task="t", step=1))                 # RUNNING
+    s.checkpoint(RunState(run_id="a", task="t", step=1))  # RUNNING
+    s.checkpoint(RunState(run_id="b", task="t", step=1))  # RUNNING
     s.mark_failed("b")
     assert [r.run_id for r in s.unfinished()] == ["a"]
 

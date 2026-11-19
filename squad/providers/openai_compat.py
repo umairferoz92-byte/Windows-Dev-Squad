@@ -10,6 +10,7 @@ omit it entirely).
 - HTTP 402 / 429 / 401 are surfaced as ProviderError with a clear message.
 - Records the model that actually answered.
 """
+
 from __future__ import annotations
 
 import httpx
@@ -53,9 +54,7 @@ class OpenAICompatibleProvider(Provider):
             json={"model": model, "messages": messages, "max_tokens": max_tokens},
         )
         if resp.status_code in (402, 401, 429):
-            reason = {402: "out of credit", 401: "unauthorized", 429: "rate limited"}[
-                resp.status_code
-            ]
+            reason = {402: "out of credit", 401: "unauthorized", 429: "rate limited"}[resp.status_code]
             raise ProviderError(f"{reason} (HTTP {resp.status_code}): {resp.text[:200]}")
         if resp.status_code != 200:
             raise ProviderError(f"provider HTTP {resp.status_code}: {resp.text[:200]}")

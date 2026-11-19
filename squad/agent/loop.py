@@ -51,12 +51,8 @@ class Agent:
         for step in range(1, self.max_steps + 1):
             prompt = self._build_prompt(task, history)
             in_tokens = estimate_tokens(prompt)
-            estimate = self.budget.preflight(
-                self.name, self.provider.name, self.model, in_tokens, self.max_output_tokens
-            )
-            resp = self.provider.chat(
-                self.model, [{"role": "user", "content": prompt}], max_tokens=self.max_output_tokens
-            )
+            estimate = self.budget.preflight(self.name, self.provider.name, self.model, in_tokens, self.max_output_tokens)
+            resp = self.provider.chat(self.model, [{"role": "user", "content": prompt}], max_tokens=self.max_output_tokens)
             self.budget.record(
                 estimate,
                 self.name,
@@ -112,9 +108,7 @@ class Agent:
     def _verify(self) -> bool:
         if not self.test_command:
             return True
-        result = run_command(
-            list(self.test_command), cwd=self.cwd, isolation_level=0, is_agent_code=False
-        )
+        result = run_command(list(self.test_command), cwd=self.cwd, isolation_level=0, is_agent_code=False)
         return result.returncode == 0
 
     def _execute(self, name: str, args: dict) -> None:
@@ -124,6 +118,4 @@ class Agent:
             with open(path, "w", encoding="utf-8") as fh:
                 fh.write(content)
         elif name == "run_tests" and self.test_command:
-            run_command(
-                list(self.test_command), cwd=self.cwd, isolation_level=0, is_agent_code=False
-            )
+            run_command(list(self.test_command), cwd=self.cwd, isolation_level=0, is_agent_code=False)

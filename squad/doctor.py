@@ -8,7 +8,6 @@ when a hard requirement is missing.
 from __future__ import annotations
 
 import os
-import shutil
 import sys
 
 from squad.tools.manifest import BLUEPRINT_MANIFEST, check_all_tools
@@ -19,23 +18,26 @@ def run_checks() -> list[dict]:
     """Return a list of {name, ok, detail, hard} checks."""
     checks: list[dict] = []
 
-    checks.append({
-        "name": "python",
-        "ok": sys.version_info >= (3, 10),
-        "detail": sys.version.split()[0],
-        "hard": True,
-    })
+    checks.append(
+        {
+            "name": "python",
+            "ok": sys.version_info >= (3, 10),
+            "detail": sys.version.split()[0],
+            "hard": True,
+        }
+    )
 
-    checks.append({
-        "name": "version",
-        "ok": True,
-        "detail": f"squad {__version__}",
-        "hard": False,
-    })
+    checks.append(
+        {
+            "name": "version",
+            "ok": True,
+            "detail": f"squad {__version__}",
+            "hard": False,
+        }
+    )
 
     # Data dir writable.
-    data_dir = os.environ.get("SQUAD_DATA_DIR",
-                              os.path.join(os.path.expanduser("~"), "AppData", "Local", "squad"))
+    data_dir = os.environ.get("SQUAD_DATA_DIR", os.path.join(os.path.expanduser("~"), "AppData", "Local", "squad"))
     try:
         os.makedirs(data_dir, exist_ok=True)
         probe = os.path.join(data_dir, ".doctor_probe")
@@ -49,6 +51,7 @@ def run_checks() -> list[dict]:
     # DB schema usable.
     try:
         from squad.store.history import ScanStore
+
         store = ScanStore()
         store.runs(limit=1)
         checks.append({"name": "history-db", "ok": True, "detail": store.db_path, "hard": False})
@@ -58,19 +61,23 @@ def run_checks() -> list[dict]:
     # External tools (informational, not hard).
     tool_states = check_all_tools()
     found = sum(1 for t in tool_states if t.installed)
-    checks.append({
-        "name": "security-tools",
-        "ok": True,
-        "detail": f"{found}/{len(BLUEPRINT_MANIFEST)} tools found",
-        "hard": False,
-    })
-    for t in tool_states:
-        checks.append({
-            "name": f"tool-{t.name}",
-            "ok": t.installed,
-            "detail": t.version or "NOT FOUND",
+    checks.append(
+        {
+            "name": "security-tools",
+            "ok": True,
+            "detail": f"{found}/{len(BLUEPRINT_MANIFEST)} tools found",
             "hard": False,
-        })
+        }
+    )
+    for t in tool_states:
+        checks.append(
+            {
+                "name": f"tool-{t.name}",
+                "ok": t.installed,
+                "detail": t.version or "NOT FOUND",
+                "hard": False,
+            }
+        )
 
     return checks
 

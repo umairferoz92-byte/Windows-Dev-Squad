@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-import subprocess
-import sys
 import os
+import subprocess
 from pathlib import Path
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -15,10 +14,7 @@ ENV.pop("PYTHONPATH", None)
 
 def run(cmd: list[str]) -> subprocess.CompletedProcess:
     # cmd is like ["security", "add-target", ...] — invoke as: python -m squad <cmd>
-    return subprocess.run(
-        [PY, "-m", "squad"] + cmd,
-        capture_output=True, text=True, cwd=ROOT, env=ENV, timeout=90
-    )
+    return subprocess.run([PY, "-m", "squad"] + cmd, capture_output=True, text=True, cwd=ROOT, env=ENV, timeout=90)
 
 
 def test_security_add_target_help():
@@ -63,7 +59,15 @@ def test_security_check_tools():
 def test_security_nightwing():
     """Test squad security nightwing on practice repo (should succeed with authorized path)."""
     print("\n=== TEST: security nightwing ===")
-    r = run(["security", "nightwing", os.path.join(ROOT, "practice", "app.py"), "--repo", os.path.join(ROOT, "practice")])
+    r = run(
+        [
+            "security",
+            "nightwing",
+            os.path.join(ROOT, "practice", "app.py"),
+            "--repo",
+            os.path.join(ROOT, "practice"),
+        ]
+    )
     print(f"  returncode: {r.returncode}")
     print(f"  stdout: {r.stdout[-300:]}")
     print(f"  stderr: {r.stderr[-300:]}")

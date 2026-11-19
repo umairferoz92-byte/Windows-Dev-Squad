@@ -12,6 +12,7 @@ NOTE: the ctypes launcher calls are Windows-only and cannot run in CI; the
 *planning* logic (limits, token attributes, readiness) is pure Python and fully
 unit-tested so the gate can verify the plan without touching the OS.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -39,6 +40,7 @@ class RestrictedLaunchPlan:
     a dataclass means the limits and token attributes are unit-testable without
     touching the OS.
     """
+
     memory_limit_mb: int
     max_processes: int
     time_limit_seconds: int
@@ -60,8 +62,14 @@ class RestrictedLaunchPlan:
         return self.memory_limit_mb * 1024 * 1024
 
 
-def plan_launch(memory_limit_mb=512, max_processes=8, time_limit_seconds=120,
-                low_integrity=True, app_container=False, network_off=True) -> RestrictedLaunchPlan:
+def plan_launch(
+    memory_limit_mb=512,
+    max_processes=8,
+    time_limit_seconds=120,
+    low_integrity=True,
+    app_container=False,
+    network_off=True,
+) -> RestrictedLaunchPlan:
     """Build a launch plan with safe defaults. Every limit is explicitly bounded
     so a caller can never silently disable a cap by passing 0 by accident."""
     return RestrictedLaunchPlan(
@@ -117,7 +125,6 @@ def launch_restricted(command: list[str], *, cwd: str, plan: RestrictedLaunchPla
     The plan is validated *before* any OS call so the gate asserts the caps are
     in place; the AppContainer no-network path is planned but not yet wired.
     """
-    import ctypes
     import subprocess
 
     from squad.exec.windows.job import JobObject

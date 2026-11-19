@@ -8,4 +8,5 @@ Training is driven by `squad/models/train.py`. A tiny synthetic dataset is
 generated on first run so you can see the pipeline work without external data.
 Replace the synthetic generator with your own CSV/JSONL loader as needed.
 """
+
 from __future__ import annotations

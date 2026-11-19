@@ -46,9 +46,7 @@ def test_trusted_check_at_level0_runs():
 
 def test_env_is_scrubbed(monkeypatch):
     monkeypatch.setenv("OPENROUTER_API_KEY", "sk-secret")
-    result = run_command(
-        [sys.executable, "-c", "import os; print(os.environ.get('OPENROUTER_API_KEY', ''))"]
-    )
+    result = run_command([sys.executable, "-c", "import os; print(os.environ.get('OPENROUTER_API_KEY', ''))"])
     assert "sk-secret" not in result.stdout
 
 

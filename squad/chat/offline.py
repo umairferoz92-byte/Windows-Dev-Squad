@@ -5,20 +5,20 @@ in-process (as subprocesses of the current interpreter). This tier never needs a
 API key and works fully offline. Interactive-only commands (add-target, phase C,
 check-tools --install) are surfaced as the exact command to run rather than hung.
 """
+
 from __future__ import annotations
 
 import re
-import shlex
 import subprocess
 import sys
-from dataclasses import dataclass, field
-from typing import Callable, Optional
+from collections.abc import Callable
+from dataclasses import dataclass
 
 
 @dataclass
 class Intent:
-    kind: str            # 'action' | 'interactive' | 'help' | 'unknown' | 'llm' | 'quit'
-    cmd: Optional[list[str]] = None  # subcommand argv, e.g. ['security', 'nightwing', target]
+    kind: str  # 'action' | 'interactive' | 'help' | 'unknown' | 'llm' | 'quit'
+    cmd: list[str] | None = None  # subcommand argv, e.g. ['security', 'nightwing', target]
     note: str = ""
 
 
@@ -30,6 +30,7 @@ def _add(pattern: str, kind: str = "action"):
     def deco(fn):
         _PATTERNS.append((re.compile(pattern, re.IGNORECASE), fn))
         return fn
+
     return deco
 
 
@@ -152,12 +153,12 @@ def parse(text: str) -> Intent:
     # into LLM research and returning an unhelpful "no records matched" result.
     _bare_usage = {
         "review": "review <path>          e.g. `review practice/app.py`",
-        "scan":   "scan <target>          e.g. `scan 127.0.0.1`",
+        "scan": "scan <target>          e.g. `scan 127.0.0.1`",
         "testgen": "testgen <file>        e.g. `testgen practice/app.py`",
         "generate tests": "testgen <file>",
         "write tests": "testgen <file>",
         "refactor": "refactor <file>      e.g. `refactor practice/app.py`",
-        "code":   "code <task>            describe a coding task in plain words",
+        "code": "code <task>            describe a coding task in plain words",
         "research": "research <topic>     describe a topic to research",
         "search": "search <query>         e.g. `search sql injection`",
     }
@@ -209,11 +210,14 @@ def run_command(cmd: list[str], timeout: int = 300) -> str:
     try:
         res = subprocess.run(
             [_interp(), "-m", "squad"] + cmd,
-            capture_output=True, text=True, timeout=timeout, env=env,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            env=env,
         )
     except subprocess.TimeoutExpired:
-        return "[chat] command timed out — killed after %ds." % timeout
-    out = (res.stdout or "")
+        return f"[chat] command timed out — killed after {timeout}s."
+    out = res.stdout or ""
     if res.stderr:
         out += ("\n" + res.stderr) if out else res.stderr
     return out.strip() or f"(no output, rc={res.returncode})"

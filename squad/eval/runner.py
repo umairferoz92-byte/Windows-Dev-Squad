@@ -1,14 +1,12 @@
 """Run the golden task set with a fixed budget and record results per commit."""
+
 from __future__ import annotations
 
-import json
 import sqlite3
 import subprocess
 import time
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass, field
 from pathlib import Path
-
-from squad.eval.tasks import GOLDEN_TASKS, GoldenTask
 
 
 @dataclass
@@ -27,7 +25,10 @@ def git_commit(cwd: Path) -> str:
     try:
         out = subprocess.run(
             ["git", "rev-parse", "--short", "HEAD"],
-            cwd=str(cwd), capture_output=True, text=True, timeout=5,
+            cwd=str(cwd),
+            capture_output=True,
+            text=True,
+            timeout=5,
         )
         return out.stdout.strip() or "none"
     except Exception:
@@ -52,15 +53,20 @@ class EvalStore:
     def record(self, commit: str, r: EvalResult) -> None:
         self._db.execute(
             "INSERT OR REPLACE INTO eval VALUES (?,?,?,?,?,?,?)",
-            (commit, r.task_id, time.time(), int(r.ok), r.cost, r.steps,
-             None if r.refused_correctly is None else int(r.refused_correctly)),
+            (
+                commit,
+                r.task_id,
+                time.time(),
+                int(r.ok),
+                r.cost,
+                r.steps,
+                None if r.refused_correctly is None else int(r.refused_correctly),
+            ),
         )
         self._db.commit()
 
     def summary(self, commit: str) -> dict:
-        rows = self._db.execute(
-            "SELECT task_id, ok, cost, steps FROM eval WHERE commit_sha=?", (commit,)
-        ).fetchall()
+        rows = self._db.execute("SELECT task_id, ok, cost, steps FROM eval WHERE commit_sha=?", (commit,)).fetchall()
         if not rows:
             return {"commit": commit, "runs": 0, "pass_rate": None, "cost": 0.0}
         return {
@@ -77,7 +83,7 @@ class EvalStore:
 def run_eval(
     tasks,
     *,
-    run_task,            # callable(task: GoldenTask) -> EvalResult
+    run_task,  # callable(task: GoldenTask) -> EvalResult
     repo_root: Path,
     store: EvalStore,
 ) -> list[EvalResult]:

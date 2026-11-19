@@ -61,9 +61,7 @@ class ApprovalStore:
     def __init__(self) -> None:
         self._items: dict[str, Approval] = {}
 
-    def grant(
-        self, approver: str, command: str, cwd: str, args: dict, ttl_seconds: int = 300
-    ) -> Approval:
+    def grant(self, approver: str, command: str, cwd: str, args: dict, ttl_seconds: int = 300) -> Approval:
         if approver != HUMAN:
             raise ValueError("only the human can grant approvals")
         approval = Approval(
@@ -81,9 +79,7 @@ class ApprovalStore:
     def lookup(self, approval_id: str) -> Approval | None:
         return self._items.get(approval_id)
 
-    def find_valid(
-        self, command: str, cwd: str, args: dict, now: float | None = None
-    ) -> Approval | None:
+    def find_valid(self, command: str, cwd: str, args: dict, now: float | None = None) -> Approval | None:
         now = time.time() if now is None else now
         target_cwd = canonical(cwd)
         target_args = _canonical_args(args)

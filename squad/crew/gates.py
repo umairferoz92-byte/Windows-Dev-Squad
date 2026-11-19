@@ -16,9 +16,7 @@ def evaluate_gates(prev: dict, curr: dict, findings: list[dict]) -> list[GateRes
     """prev/curr: {"tests_passed": int, "tests_skipped": int, "coverage": float, "exit_code": int}.
     findings: list of {"severity": str, "approved": bool}."""
     gates = [
-        GateResult(
-            "tests_exit_0", curr.get("exit_code") == 0, f"exit code {curr.get('exit_code')}"
-        ),
+        GateResult("tests_exit_0", curr.get("exit_code") == 0, f"exit code {curr.get('exit_code')}"),
         GateResult(
             "test_count_not_lower",
             curr.get("tests_passed", 0) >= prev.get("tests_passed", 0),
@@ -30,9 +28,7 @@ def evaluate_gates(prev: dict, curr: dict, findings: list[dict]) -> list[GateRes
             f"{prev.get('coverage', 0.0)} -> {curr.get('coverage', 0.0)}",
         ),
     ]
-    unresolved = [
-        f for f in findings if f.get("severity") in ("high", "critical") and not f.get("approved")
-    ]
+    unresolved = [f for f in findings if f.get("severity") in ("high", "critical") and not f.get("approved")]
     gates.append(
         GateResult(
             "no_unresolved_high_critical",

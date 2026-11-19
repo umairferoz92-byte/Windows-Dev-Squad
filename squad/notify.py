@@ -11,8 +11,7 @@ from __future__ import annotations
 import os
 import shutil
 import subprocess
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 
 
 class Notifier:
@@ -30,14 +29,13 @@ class Notifier:
 
     def _desktop(self, title: str, message: str, severity: str) -> None:
         # Windows toast via PowerShell — best-effort, non-blocking.
-        ps = (
-            "New-BurntToastNotification"  # not guaranteed present
-        )
+        ps = "New-BurntToastNotification"  # not guaranteed present
         _ = ps
         # Fall back to msg.exe for current user.
         subprocess.run(
             ["msg", os.environ.get("USERNAME", "squad"), title + " - " + message],
-            capture_output=True, timeout=5,
+            capture_output=True,
+            timeout=5,
         )
 
 
@@ -59,4 +57,4 @@ def severity_changed(run_id: str, new_count: int, old_count: int, channel: str =
 
 
 def ts() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()

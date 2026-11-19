@@ -1,10 +1,11 @@
 """Unit tests for the blue-themed TUI dashboard."""
+
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from squad.dashboard import build_dashboard, _tools, _intel
+from squad.dashboard import _intel, _tools, build_dashboard
 
 
 def test_build_dashboard_renders_without_error():
@@ -32,6 +33,7 @@ def test_intel_returns_counts():
 
 def test_banner_is_nonempty():
     from squad.dashboard import ASCII_BANNER
+
     assert ASCII_BANNER.count("\n") >= 5
 
 
@@ -40,8 +42,8 @@ def test_execute_never_raises_when_run_command_blows_up(monkeypatch):
     string, never let the exception escape and crash the TUI."""
     import types
 
-    import squad.dashboard as D
     import squad.chat
+    import squad.dashboard as D
 
     def bad_run(cmd):
         raise ConnectionError("provider down")
@@ -63,8 +65,8 @@ def test_execute_reports_empty_output(monkeypatch):
     """A command returning empty/None yields '(no output)'."""
     import types
 
-    import squad.dashboard as D
     import squad.chat
+    import squad.dashboard as D
 
     fake = types.ModuleType("offline")
     fake.run_command = lambda cmd: None
@@ -82,7 +84,8 @@ def test_research_falls_back_on_llm_network_error(monkeypatch):
     """_research must degrade to offline intel search when the LLM provider
     raises a transient network error (not just NoKey/NoModel)."""
     import squad.dashboard as D
-    from squad.chat import llm as llm_tier, offline
+    from squad.chat import llm as llm_tier
+    from squad.chat import offline
 
     def boom_answer(prompt, **k):
         raise ConnectionError("timeout")
@@ -101,7 +104,8 @@ def test_research_falls_back_on_llm_network_error(monkeypatch):
 def test_research_falls_back_when_no_key(monkeypatch):
     """Missing LLM API key (NoKey) must also fall back to intel search."""
     import squad.dashboard as D
-    from squad.chat import llm as llm_tier, offline
+    from squad.chat import llm as llm_tier
+    from squad.chat import offline
 
     def no_key_answer(prompt, **k):
         raise llm_tier.NoKey("no key")
@@ -116,18 +120,33 @@ def test_research_falls_back_when_no_key(monkeypatch):
     assert "intel search" in out
     assert "LLM API key" in out
 
+
 def test_special_keys_do_not_leak_into_prompt(monkeypatch):
     """Windows extended keys (PageUp/Down, arrows, Home/End, ...) arrive as a
     0xE0 lead byte + a virtual-key code. The input loop must swallow BOTH bytes
     so no '`I`'/'`Q`'/'`H`' garbage pollutes the command line. Regression for
     the "strange symbols when scrolling" report."""
-    import squad.dashboard as D
 
     # Simulate the patched key-handling logic against a flat key stream.
     # PgUp(2b) PgDn(2b) Down(2b) then typing "help" + Enter then "quit" + Enter.
-    stream = ["\xe0", "I", "\xe0", "Q", "\xe0", "P",
-              "h", "e", "l", "p", "\r",
-              "q", "u", "i", "t", "\r"]
+    stream = [
+        "\xe0",
+        "I",
+        "\xe0",
+        "Q",
+        "\xe0",
+        "P",
+        "h",
+        "e",
+        "l",
+        "p",
+        "\r",
+        "q",
+        "u",
+        "i",
+        "t",
+        "\r",
+    ]
 
     buf = []
     cmds = []
@@ -179,20 +198,25 @@ def test_intel_search_output_is_codepage_safe():
 # ---- Interactive line editor tests -----------------------------------------
 def test_line_editor_insert_and_cursor_movement():
     from squad.dashboard import LineEditor
+
     e = LineEditor()
-    e.insert("h"); e.insert("i")
+    e.insert("h")
+    e.insert("i")
     assert "".join(e.buf) == "hi" and e.pos == 2
     e.move_left()
     assert e.pos == 1
     e.insert("X")
     assert "".join(e.buf) == "hXi"
-    e.move_home(); e.insert("!")
+    e.move_home()
+    e.insert("!")
     assert "".join(e.buf) == "!hXi"
-    e.move_end(); assert e.pos == 4
+    e.move_end()
+    assert e.pos == 4
 
 
 def test_line_editor_backspace_and_delete():
     from squad.dashboard import LineEditor
+
     e = LineEditor()
     for c in "abcdef":
         e.insert(c)
@@ -204,6 +228,7 @@ def test_line_editor_backspace_and_delete():
 
 def test_line_editor_history_navigation():
     from squad.dashboard import LineEditor
+
     e = LineEditor()
     assert e.submit() == ""
     for c in "menu":
@@ -222,6 +247,7 @@ def test_line_editor_history_navigation():
 
 def test_line_editor_render_places_cursor():
     from squad.dashboard import LineEditor
+
     e = LineEditor()
     for c in "scan":
         e.insert(c)
@@ -235,8 +261,9 @@ def test_line_editor_render_places_cursor():
 
 # ---- save_api_key tests -----------------------------------------------------
 def test_save_api_key_writes_env_and_provider(monkeypatch, tmp_path):
-    import squad.dashboard as D
     import squad.config.data as cdata
+    import squad.dashboard as D
+
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(cdata, "data_dir", lambda: tmp_path)
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
@@ -256,8 +283,9 @@ def test_save_api_key_writes_env_and_provider(monkeypatch, tmp_path):
 
 
 def test_save_api_key_rejects_empty_value(monkeypatch, tmp_path):
-    import squad.dashboard as D
     import squad.config.data as cdata
+    import squad.dashboard as D
+
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(cdata, "data_dir", lambda: tmp_path)
     ok, msg = D.save_api_key("openai", "   ")
@@ -266,8 +294,9 @@ def test_save_api_key_rejects_empty_value(monkeypatch, tmp_path):
 
 
 def test_save_api_key_uses_ollama_free(monkeypatch, tmp_path):
-    import squad.dashboard as D
     import squad.config.data as cdata
+    import squad.dashboard as D
+
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(cdata, "data_dir", lambda: tmp_path)
     monkeypatch.delenv("OLLAMA_API_KEY", raising=False)
@@ -283,6 +312,7 @@ def test_arrow_key_virtual_codes_map_to_editor_actions(monkeypatch):
     """The 0xE0 lead-byte + virtual-key-code pairs must drive cursor/history,
     not leak raw chars. Exercise the exact mapping used in dashboard_command."""
     import squad.dashboard as D
+
     e = D.LineEditor()
     for c in "scan":
         e.insert(c)
@@ -294,6 +324,7 @@ def test_arrow_key_virtual_codes_map_to_editor_actions(monkeypatch):
 
 def test_prompt_modes_render_distinct_prompts():
     import squad.dashboard as D
+
     e = D.LineEditor()
     assert e.render_prompt("command").plain.startswith("squad>")
     assert e.render_prompt("setkey_provider").plain.startswith("provider>")

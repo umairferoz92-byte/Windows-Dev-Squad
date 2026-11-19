@@ -15,15 +15,19 @@ import json
 import os
 import sqlite3
 import uuid
-from datetime import datetime, timezone
+from collections.abc import Iterable
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Iterable, Optional
 
-from squad.security_findings import SecurityFinding, SecuritySeverity, redact_evidence
+from squad.security_findings import SecurityFinding, redact_evidence
 
 # Severity ranking for thresholds.
 _SEVERITY_RANK = {
-    "info": 0, "low": 1, "medium": 2, "high": 3, "critical": 4,
+    "info": 0,
+    "low": 1,
+    "medium": 2,
+    "high": 3,
+    "critical": 4,
 }
 
 
@@ -34,7 +38,7 @@ def default_db_path() -> str:
 
 
 class ScanStore:
-    def __init__(self, db_path: Optional[str] = None):
+    def __init__(self, db_path: str | None = None):
         self.db_path = db_path or default_db_path()
         Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)
         self._init_schema()
@@ -75,20 +79,27 @@ class ScanStore:
             conn.execute("CREATE INDEX IF NOT EXISTS idx_findings_run ON findings(run_id)")
 
     # -- writing -----------------------------------------------------------
-    def new_run(self, target: str, phases: str, tool_coverage: Optional[dict] = None) -> str:
+    def new_run(self, target: str, phases: str, tool_coverage: dict | None = None) -> str:
         run_id = uuid.uuid4().hex[:12]
         with self._connect() as conn:
             conn.execute(
                 "INSERT INTO runs (run_id, target, phases, started_at, tool_coverage) VALUES (?,?,?,?,?)",
-                (run_id, target, phases, datetime.now(timezone.utc).isoformat(),
-                 json.dumps(tool_coverage or {})),
+                (
+                    run_id,
+                    target,
+                    phases,
+                    datetime.now(UTC).isoformat(),
+                    json.dumps(tool_coverage or {}),
+                ),
             )
         return run_id
 
     def finish_run(self, run_id: str) -> None:
         with self._connect() as conn:
-            conn.execute("UPDATE runs SET finished_at=? WHERE run_id=?",
-                         (datetime.now(timezone.utc).isoformat(), run_id))
+            conn.execute(
+                "UPDATE runs SET finished_at=? WHERE run_id=?",
+                (datetime.now(UTC).isoformat(), run_id),
+            )
 
     def add_findings(self, run_id: str, findings: Iterable[SecurityFinding]) -> int:
         n = 0
@@ -98,9 +109,18 @@ class ScanStore:
                     """INSERT INTO findings (id, run_id, tool, severity, description,
                        file_or_endpoint, evidence_snippet, cwe, owasp_category, remediation)
                        VALUES (?,?,?,?,?,?,?,?,?,?)""",
-                    (uuid.uuid4().hex[:16], run_id, f.tool, f.severity.value,
-                     f.description, f.file_or_endpoint, redact_evidence(f.evidence_snippet),
-                     f.cwe, f.owasp_category, f.remediation),
+                    (
+                        uuid.uuid4().hex[:16],
+                        run_id,
+                        f.tool,
+                        f.severity.value,
+                        f.description,
+                        f.file_or_endpoint,
+                        redact_evidence(f.evidence_snippet),
+                        f.cwe,
+                        f.owasp_category,
+                        f.remediation,
+                    ),
                 )
                 n += 1
         return n
@@ -124,30 +144,31 @@ class ScanStore:
             return cur.rowcount
 
     # -- reading -----------------------------------------------------------
-    def runs(self, target: Optional[str] = None, limit: int = 50) -> list[dict]:
+    def runs(self, target: str | None = None, limit: int = 50) -> list[dict]:
         with self._connect() as conn:
             if target:
                 rows = conn.execute(
                     "SELECT * FROM runs WHERE target=? ORDER BY started_at DESC LIMIT ?",
-                    (target, limit)).fetchall()
+                    (target, limit),
+                ).fetchall()
             else:
                 rows = conn.execute("SELECT * FROM runs ORDER BY started_at DESC LIMIT ?", (limit,)).fetchall()
         return [dict(r) for r in rows]
 
-    def get_run(self, run_id: str) -> Optional[dict]:
+    def get_run(self, run_id: str) -> dict | None:
         with self._connect() as conn:
             row = conn.execute("SELECT * FROM runs WHERE run_id=?", (run_id,)).fetchone()
             return dict(row) if row else None
 
-    def run_findings(self, run_id: str, status: Optional[str] = None) -> list[dict]:
+    def run_findings(self, run_id: str, status: str | None = None) -> list[dict]:
         with self._connect() as conn:
             if status:
                 rows = conn.execute(
                     "SELECT * FROM findings WHERE run_id=? AND status=? ORDER BY severity",
-                    (run_id, status)).fetchall()
+                    (run_id, status),
+                ).fetchall()
             else:
-                rows = conn.execute(
-                    "SELECT * FROM findings WHERE run_id=? ORDER BY severity", (run_id,)).fetchall()
+                rows = conn.execute("SELECT * FROM findings WHERE run_id=? ORDER BY severity", (run_id,)).fetchall()
         return [dict(r) for r in rows]
 
     def count_by_severity(self, run_id: str) -> dict[str, int]:
@@ -165,20 +186,14 @@ class ScanStore:
             "latest_run": latest,
             "latest_target": runs[0]["target"] if runs else None,
             "latest_severity": self.count_by_severity(latest) if latest else {},
-            "open_by_run": {
-                r["run_id"]: sum(
-                    1 for f in self.run_findings(r["run_id"]) if f["status"] == "open"
-                ) for r in runs
-            },
+            "open_by_run": {r["run_id"]: sum(1 for f in self.run_findings(r["run_id"]) if f["status"] == "open") for r in runs},
         }
 
     # -- diff --------------------------------------------------------------
     def diff(self, run_a: str, run_b: str) -> dict:
         """New / fixed findings between two runs, keyed on tool+endpoint+severity."""
-        fa = {(f["tool"], f["file_or_endpoint"], f["severity"], f["description"])
-              for f in self.run_findings(run_a)}
-        fb = {(f["tool"], f["file_or_endpoint"], f["severity"], f["description"])
-              for f in self.run_findings(run_b)}
+        fa = {(f["tool"], f["file_or_endpoint"], f["severity"], f["description"]) for f in self.run_findings(run_a)}
+        fb = {(f["tool"], f["file_or_endpoint"], f["severity"], f["description"]) for f in self.run_findings(run_b)}
         return {
             "run_a": run_a,
             "run_b": run_b,
@@ -191,9 +206,7 @@ class ScanStore:
         """Return (passed, blockers). A blocker is any finding at/above threshold not ignored."""
         threshold = _SEVERITY_RANK.get(fail_on, 3)
         blockers = [
-            f for f in self.run_findings(run_id)
-            if _SEVERITY_RANK.get(f["severity"], 0) >= threshold
-            and f["status"] not in ignore_statuses
+            f for f in self.run_findings(run_id) if _SEVERITY_RANK.get(f["severity"], 0) >= threshold and f["status"] not in ignore_statuses
         ]
         return len(blockers) == 0, blockers
 

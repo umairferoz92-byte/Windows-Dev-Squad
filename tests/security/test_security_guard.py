@@ -8,10 +8,7 @@ Asserts the three core guarantees from the blueprint:
 
 from __future__ import annotations
 
-import hashlib
-import os
-import shutil
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
@@ -34,7 +31,7 @@ def isolated_paths(tmp_path):
 
 def _make_record(target, ownership, added_at=None):
     """Build a valid, correctly-hashed record for a target."""
-    added_at = added_at or datetime.now(timezone.utc).isoformat()
+    added_at = added_at or datetime.now(UTC).isoformat()
     rec = {"target": target, "ownership_statement": ownership, "added_at": added_at}
     rec["sha256"] = sec._sha256_of(rec)
     return rec
@@ -42,6 +39,7 @@ def _make_record(target, ownership, added_at=None):
 
 def _write_yaml(path, records):
     import yaml
+
     with open(path, "w", encoding="utf-8") as f:
         yaml.dump(records, f, default_flow_style=False, sort_keys=True)
 
@@ -72,7 +70,8 @@ def test_tampered_record_is_refused(isolated_paths):
 
     # Now tamper: change the stored record's ownership in the YAML but keep old sha256
     import yaml
-    with open(isolated_paths["yaml"], "r", encoding="utf-8") as f:
+
+    with open(isolated_paths["yaml"], encoding="utf-8") as f:
         records = yaml.safe_load(f) or []
     assert records, "expected at least one record"
     records[0]["ownership_statement"] = "MALLICIOUS OVERRIDE - not the owner"
@@ -114,6 +113,7 @@ def test_add_target_writes_record_and_audit(isolated_paths, monkeypatch, capsys)
 
     # Audit log has the add event and its chain verifies
     from squad.audit.audit import AuditLog
+
     log = AuditLog(isolated_paths["audit"])
     assert log.verify()
     events = [e.get("event") for e in log._entries]

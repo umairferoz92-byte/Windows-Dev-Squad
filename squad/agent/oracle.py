@@ -13,12 +13,11 @@ secret-looking strings (API keys, passwords) before they reach the report.
 
 from __future__ import annotations
 
-import hashlib
 import io
 import json
 import re
-from datetime import datetime, timezone
-from typing import Iterable, Optional, Sequence
+from collections.abc import Iterable
+from datetime import UTC, datetime
 
 from squad.security_findings import SecurityFinding, SecuritySeverity
 
@@ -62,12 +61,14 @@ def redact_evidence(text: str) -> str:
 
 def _finding_key(f: SecurityFinding) -> str:
     """Dedupe key: exact repeats only. Tool+endpoint+severity+description."""
-    return "|".join([
-        f.tool,
-        f.file_or_endpoint,
-        f.severity.value,
-        f.description,
-    ])
+    return "|".join(
+        [
+            f.tool,
+            f.file_or_endpoint,
+            f.severity.value,
+            f.description,
+        ]
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -76,9 +77,9 @@ def _finding_key(f: SecurityFinding) -> str:
 class Oracle:
     def __init__(
         self,
-        findings: Optional[Iterable[SecurityFinding]] = None,
+        findings: Iterable[SecurityFinding] | None = None,
         target: str = "",
-        skipped: Optional[dict] = None,
+        skipped: dict | None = None,
     ):
         # Dedupe exact repeats immediately on ingest; never alter severity.
         seen: dict[str, SecurityFinding] = {}
@@ -118,21 +119,19 @@ class Oracle:
         counts = self.by_severity()
         tested = len(self.findings)
         skipped_note = (
-            "No tools or phases were skipped."
-            if not self.skipped
-            else "Some tools/phases were skipped; see the coverage note below."
+            "No tools or phases were skipped." if not self.skipped else "Some tools/phases were skipped; see the coverage note below."
         )
         return (
-            "## Executive Summary\n\n"
-            f"**Target:** `{self.target or '(not specified)'}`\n\n"
-            f"Oracle aggregated **{tested}** finding(s) produced by Nightwing. "
-            f"Overall risk picture: **{self.overall_risk()}**.\n\n"
-            f"| Severity | Count |\n"
-            f"|----------|-------|\n"
-        ) + "".join(
-            f"| {sev.upper()} | {counts.get(sev, 0)} |\n" for sev in ("critical", "high", "medium", "low", "info")
-        ) + (
-            f"\nWhat was tested and what was skipped: {skipped_note}\n"
+            (
+                "## Executive Summary\n\n"
+                f"**Target:** `{self.target or '(not specified)'}`\n\n"
+                f"Oracle aggregated **{tested}** finding(s) produced by Nightwing. "
+                f"Overall risk picture: **{self.overall_risk()}**.\n\n"
+                f"| Severity | Count |\n"
+                f"|----------|-------|\n"
+            )
+            + "".join(f"| {sev.upper()} | {counts.get(sev, 0)} |\n" for sev in ("critical", "high", "medium", "low", "info"))
+            + (f"\nWhat was tested and what was skipped: {skipped_note}\n")
         )
 
     # -- findings table -----------------------------------------------------
@@ -150,10 +149,7 @@ class Oracle:
             owasp = f.owasp_category or "-"
             affected = f.file_or_endpoint.replace("|", "\\|")
             desc = f.description.replace("|", "\\|")
-            lines.append(
-                f"| {f.severity.value.upper()} | {f.tool} | {cwe} | {owasp} | "
-                f"`{affected}` | {desc} |"
-            )
+            lines.append(f"| {f.severity.value.upper()} | {f.tool} | {cwe} | {owasp} | `{affected}` | {desc} |")
         return "\n".join(lines) + "\n"
 
     # -- coverage / skipped ------------------------------------------------
@@ -201,10 +197,7 @@ class Oracle:
 
     # -- report rendering ---------------------------------------------------
     def to_markdown(self) -> str:
-        header = (
-            "# Security Squad Report\n\n"
-            f"_Generated {datetime.now(timezone.utc).isoformat()} by Oracle._\n\n"
-        )
+        header = f"# Security Squad Report\n\n_Generated {datetime.now(UTC).isoformat()} by Oracle._\n\n"
         return (
             header
             + self._executive_summary()
@@ -229,9 +222,7 @@ class Oracle:
             "<title>Security Squad Report</title>"
             "<style>body{font-family:system-ui,sans-serif;margin:2em;"
             "max-width:900px;}pre{background:#f5f5f5;padding:1em;"
-            "overflow:auto;}</style></head><body>"
-            + safe.replace("\n", "<br>")
-            + "</body></html>"
+            "overflow:auto;}</style></head><body>" + safe.replace("\n", "<br>") + "</body></html>"
         )
 
     def to_pdf(self) -> bytes:
@@ -266,9 +257,11 @@ class Oracle:
 
     def to_json(self) -> str:
         return json.dumps(
-            {"target": self.target,
-             "skipped": self.skipped,
-             "findings": [f.to_dict() for f in self.sorted_findings()]},
+            {
+                "target": self.target,
+                "skipped": self.skipped,
+                "findings": [f.to_dict() for f in self.sorted_findings()],
+            },
             indent=2,
         )
 
@@ -282,17 +275,15 @@ def findings_from_json(payload: str | dict) -> list[SecurityFinding]:
 def _plain_pdf(md: str) -> bytes:
     """Minimal hand-rolled PDF so PDF export works without reportlab."""
     lines = md.splitlines()
-    content = "BT\n/F1 9 Tf\n50 780 Td\n16 TL\n" + "".join(
-        f"({_pdf_escape(l[:110])}) Tj\nT*\n" for l in lines
-    ) + "ET\n"
+    content = "BT\n/F1 9 Tf\n50 780 Td\n16 TL\n" + "".join(f"({_pdf_escape(line[:110])}) Tj\nT*\n" for line in lines) + "ET\n"
     objects = (
         "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n"
         "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n"
         "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] "
         "/Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>\nendobj\n"
-        "4 0 obj\n<< /Length %d >>\nstream\n%s\nendstream\nendobj\n"
+        f"4 0 obj\n<< /Length {len(content)} >>\nstream\n{content}\nendstream\nendobj\n"
         "5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>\nendobj\n"
-    ) % (len(content), content)
+    )
     chunks = [b"%PDF-1.4\n"]
     obj_texts = [t for t in objects.split("endobj\n") if t.strip()] + ["endobj\n"]
     offsets = [0]
@@ -303,9 +294,9 @@ def _plain_pdf(md: str) -> bytes:
     n = len(obj_texts)
     xref = b"xref\n0 %d\n" % (n + 1)
     xref += b"0000000000 65535 f \n"
-    for o in offsets[1:n + 1]:
-        xref += ("%010d 00000 n \n" % o).encode("latin-1")
-    trailer = b"trailer\n<< /Size %d /Root 1 0 R >>\nstartxref\n%d\n%%%%EOF\n" % (n + 1, len(total) + len(xref))
+    for o in offsets[1 : n + 1]:
+        xref += (f"{o:010d} 00000 n \n").encode("latin-1")
+    trailer = f"trailer\n<< /Size {n + 1} /Root 1 0 R >>\nstartxref\n{len(total) + len(xref)}\n%%%%EOF\n".encode("latin-1")
     return total + xref + trailer
 
 

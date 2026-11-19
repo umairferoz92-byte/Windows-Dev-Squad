@@ -70,7 +70,7 @@ class AuditLog:
         """Return raw log lines (one JSON object per line) for audit export."""
         if not self.path.exists():
             return []
-        return [l for l in self.path.read_text(encoding="utf-8").splitlines() if l.strip()]
+        return [ln for ln in self.path.read_text(encoding="utf-8").splitlines() if ln.strip()]
 
     def verify(self) -> bool:
         prev = ""

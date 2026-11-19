@@ -8,8 +8,7 @@ Covers:
 
 from __future__ import annotations
 
-import sys
-from unittest.mock import MagicMock, patch
+from datetime import UTC
 
 import pytest
 
@@ -22,9 +21,13 @@ from squad.security_findings import SecuritySeverity
 def authorized_loopback(tmp_path):
     old = sec.AUTHORIZED_PATH
     sec.AUTHORIZED_PATH = str(tmp_path / "authorized.yaml")
-    from datetime import datetime, timezone
-    rec = {"target": "http://127.0.0.1:9999", "ownership_statement": "mine",
-           "added_at": datetime.now(timezone.utc).isoformat()}
+    from datetime import datetime
+
+    rec = {
+        "target": "http://127.0.0.1:9999",
+        "ownership_statement": "mine",
+        "added_at": datetime.now(UTC).isoformat(),
+    }
     rec["sha256"] = sec._sha256_of(rec)
     sec._append_authorized(rec)
     yield "http://127.0.0.1:9999"
@@ -37,8 +40,10 @@ def test_host_of_strips_scheme_path_port():
 
 
 def test_phase_a_produces_dns_and_skips_headers(tmp_path, authorized_loopback, monkeypatch):
-    monkeypatch.setattr("squad.agent.nightwing.socket.getaddrinfo",
-                        lambda *a, **k: [(0, 0, 0, "", ("127.0.0.1", 0))])
+    monkeypatch.setattr(
+        "squad.agent.nightwing.socket.getaddrinfo",
+        lambda *a, **k: [(0, 0, 0, "", ("127.0.0.1", 0))],
+    )
     monkeypatch.setattr("squad.agent.nightwing.Nightwing._check_headers", lambda *a, **k: None)
     monkeypatch.setattr("squad.agent.nightwing.Nightwing._check_exposed", lambda *a, **k: None)
     monkeypatch.setattr("squad.agent.nightwing.Nightwing._fingerprint", lambda *a, **k: None)
@@ -72,9 +77,11 @@ def test_parse_gitleaks(tmp_path, authorized_loopback):
 
 def test_parse_trivy(tmp_path, authorized_loopback):
     nw = Nightwing(authorized_loopback)
-    out = ('{"Results": [{"Target": "requirements.txt", "Vulnerabilities": '
-           '[{"VulnerabilityID": "CVE-2024-1", "Severity": "CRITICAL", '
-           '"PkgName": "requests", "InstalledVersion": "2.0", "Title": "bad"}]}]}')
+    out = (
+        '{"Results": [{"Target": "requirements.txt", "Vulnerabilities": '
+        '[{"VulnerabilityID": "CVE-2024-1", "Severity": "CRITICAL", '
+        '"PkgName": "requests", "InstalledVersion": "2.0", "Title": "bad"}]}]}'
+    )
     fs = []
     nw._parse_trivy(out, fs)
     assert len(fs) == 1
@@ -89,8 +96,10 @@ def test_trivy_severity_mapping(tmp_path, authorized_loopback):
 
 
 def test_phase_c_includes_content_discovery_when_gobuster(authorized_loopback, monkeypatch):
-    monkeypatch.setattr("squad.agent.nightwing.shutil.which",
-                        lambda x: "/usr/bin/" + x if x in ("gobuster",) else None)
+    monkeypatch.setattr(
+        "squad.agent.nightwing.shutil.which",
+        lambda x: "/usr/bin/" + x if x in ("gobuster",) else None,
+    )
     nw = Nightwing(authorized_loopback)
     cmds = nw._build_phase_c_commands()
     assert any("gobuster" in c for c in cmds)
@@ -112,5 +121,6 @@ def test_phase_c_reports_missing_content_tools(authorized_loopback, monkeypatch)
 class _FakeProc:
     def communicate(self, timeout=None):
         return ("output", None)
+
     def poll(self):
         return 0

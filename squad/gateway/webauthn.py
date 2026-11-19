@@ -5,32 +5,28 @@ Implements the registration + authentication (login) ceremony using the
 
 Sessions are short-lived and bound to the exact device/credential.
 """
+
 from __future__ import annotations
 
 import base64
 import hashlib
 import hmac
-import json
 import os
 import time
 from dataclasses import dataclass, field
 
 try:
     from webauthn import generate_registration_options, verify_registration_response
-    from webauthn.helpers.structs import (
-        AuthenticatorSelectionCriteria,
-        PublicKeyCredentialCreationOptions,
-        PublicKeyCredentialRequestOptions,
-        UserVerificationRequirement,
-    )
+    from webauthn.helpers.structs import AuthenticatorSelectionCriteria
+
     _WEBAUTHN_AVAILABLE = True
 except ImportError:
     _WEBAUTHN_AVAILABLE = False
 
-_RP_ID = "127.0.0.1"      # loopback-only relying party
+_RP_ID = "127.0.0.1"  # loopback-only relying party
 _RP_NAME = "squad remote"
 _ORIGIN = "http://127.0.0.1:8765"
-_CHALLENGE_TTL = 300      # seconds
+_CHALLENGE_TTL = 300  # seconds
 
 
 @dataclass
@@ -40,8 +36,8 @@ class WebAuthnState:
     rp_id: str = _RP_ID
     rp_name: str = _RP_NAME
     origin: str = _ORIGIN
-    challenges: dict[str, float] = field(default_factory=dict)   # challenge -> created_at
-    credentials: dict[str, dict] = field(default_factory=dict)   # credential_id -> data
+    challenges: dict[str, float] = field(default_factory=dict)  # challenge -> created_at
+    credentials: dict[str, dict] = field(default_factory=dict)  # credential_id -> data
     secret: bytes = field(default_factory=lambda: os.urandom(32))
 
     # --- challenges -------------------------------------------------------
@@ -167,9 +163,7 @@ def generate_authentication_options(wa: WebAuthnState) -> dict:
         "rpId": wa.rp_id,
         "timeout": 60000,
         "userVerification": "preferred",
-        "allowCredentials": [
-            {"type": "public-key", "id": cid} for cid in wa.credentials
-        ],
+        "allowCredentials": [{"type": "public-key", "id": cid} for cid in wa.credentials],
     }
 
 
@@ -200,7 +194,7 @@ def verify_authentication(wa: WebAuthnState, response: dict) -> bool:
 
 def verify_origin_and_host(origin: str, host: str) -> bool:
     """Enforce Origin and Host checks (loopback only)."""
-    return (
-        host in ("127.0.0.1", "localhost")
-        and origin in ("http://127.0.0.1:8765", "http://localhost:8765")
+    return host in ("127.0.0.1", "localhost") and origin in (
+        "http://127.0.0.1:8765",
+        "http://localhost:8765",
     )

@@ -72,9 +72,7 @@ def test_credential_manager_keys_loads_api_key_creds(tmp_path, monkeypatch):
             # Subscript writes propagate back through ctypes.pointer(); the
             # `.contents` setter does NOT (a CPython ctypes quirk).
             count_ptr[0] = n
-            pparray[0] = ctypes.cast(
-                arr, ctypes.POINTER(ctypes.POINTER(keys.CREDENTIAL))
-            )
+            pparray[0] = ctypes.cast(arr, ctypes.POINTER(ctypes.POINTER(keys.CREDENTIAL)))
             return True
 
         def CredReadW(self, target, ctype, flags, pcred_out):
@@ -121,9 +119,7 @@ def test_credential_manager_keys_keeps_existing_env(monkeypatch):
             arr[0] = ctypes.pointer(cred)
             self._arr = arr
             count_ptr[0] = 1
-            pparray[0] = ctypes.cast(
-                arr, ctypes.POINTER(ctypes.POINTER(keys.CREDENTIAL))
-            )
+            pparray[0] = ctypes.cast(arr, ctypes.POINTER(ctypes.POINTER(keys.CREDENTIAL)))
             return True
 
         def CredReadW(self, target, ctype, flags, pcred_out):
@@ -139,8 +135,6 @@ def test_credential_manager_keys_keeps_existing_env(monkeypatch):
         def CredFree(self, ptr):
             return None
 
-    monkeypatch.setattr(
-        keys.ctypes, "WinDLL", lambda *a, **k: FakeAdvapi32()
-    )
+    monkeypatch.setattr(keys.ctypes, "WinDLL", lambda *a, **k: FakeAdvapi32())
     keys.load_credential_manager_keys()
     assert os.environ.get("OPENROUTER_API_KEY") == "sk-already-set"

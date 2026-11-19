@@ -6,13 +6,13 @@ Tier 2 (LLM): research/advanced questions route to the configured OpenRouter
 provider (``OPENROUTER_API_KEY`` + ``models.worker`` in squad.yaml). The model is
 a read-only advisor — it recommends, it never executes.
 """
+
 from __future__ import annotations
 
 import shlex
-from typing import Callable, Optional
+from collections.abc import Callable
 
 from squad.chat import llm as llm_tier
-from squad.chat import memory as mem
 from squad.chat import offline
 
 HELP_TEXT = """\
@@ -79,7 +79,7 @@ def _handle(intent: offline.Intent, history: list[dict] | None = None) -> str:
     return "I didn't understand that. Try `help`."
 
 
-def _try_classifier_route(text: str) -> Optional[list[str]]:
+def _try_classifier_route(text: str) -> list[str] | None:
     """Ask the TF intent classifier for a confident action route, if available.
 
     Returns a subcommand argv (e.g. ['security','status']) or None. Loading is
@@ -87,12 +87,13 @@ def _try_classifier_route(text: str) -> Optional[list[str]]:
     """
     try:
         from squad.chat import classifier as clf
+
         return clf.bridge.route(text)
     except Exception:
         return None
 
 
-def _try_code_security(text: str) -> Optional[str]:
+def _try_code_security(text: str) -> str | None:
     """Vet a code snippet with the TF security classifier, if requested.
 
     Returns a formatted verdict string, or None when the message is not a
@@ -119,10 +120,7 @@ def _try_code_security(text: str) -> Optional[str]:
             "  Treat this as a finding. Run `squad security scan <target> repo C:/repo` "
             "for a full Nightwing assessment of the surrounding code."
         )
-    return (
-        f"[chat] ✓ security classifier: likely-safe (p={pct:.1f}%)\n\n"
-        f"  snippet: {code}"
-    )
+    return f"[chat] ✓ security classifier: likely-safe (p={pct:.1f}%)\n\n  snippet: {code}"
 
 
 def _extract_snippet(text: str) -> str:
@@ -136,9 +134,26 @@ def _extract_snippet(text: str) -> str:
     words = text.split()
     drop = 0
     for w in words:
-        if w.lower() in ("check", "is", "this", "safe", "if", "for", "review",
-                         "analyze", "audit", "the", "code", "snippet", "how",
-                         "security", "vulnerabilities", "vulns", "?", ":"):
+        if w.lower() in (
+            "check",
+            "is",
+            "this",
+            "safe",
+            "if",
+            "for",
+            "review",
+            "analyze",
+            "audit",
+            "the",
+            "code",
+            "snippet",
+            "how",
+            "security",
+            "vulnerabilities",
+            "vulns",
+            "?",
+            ":",
+        ):
             drop += 1
         else:
             break
@@ -172,17 +187,43 @@ def _handle_llm(prompt: str, history: list[dict] | None = None) -> str:
         print("[chat] falling back to offline intelligence search...\n")
         q = _fallback_query(prompt)
         out = offline.run_command(["intel", "search", q])
-        return out + "\n\n[chat] Tip: set an LLM API key (e.g. OPENAI_API_KEY, " \
-                     "ANTHROPIC_API_KEY) or run a free local server (ollama/lmstudio) " \
-                     "to unlock full research answers. See `squad providers`."
+        return (
+            out + "\n\n[chat] Tip: set an LLM API key (e.g. OPENAI_API_KEY, "
+            "ANTHROPIC_API_KEY) or run a free local server (ollama/lmstudio) "
+            "to unlock full research answers. See `squad providers`."
+        )
     prefix = f"[llm/{reply.model}] " if reply.model else "[llm] "
     return prefix + reply.text
 
 
 _STOPWORDS = {
-    "what", "is", "are", "the", "a", "an", "do", "does", "how", "why", "of",
-    "to", "me", "my", "in", "on", "for", "and", "or", "with", "i", "can",
-    "you", "tell", "about", "explain", "give", "me",
+    "what",
+    "is",
+    "are",
+    "the",
+    "a",
+    "an",
+    "do",
+    "does",
+    "how",
+    "why",
+    "of",
+    "to",
+    "me",
+    "my",
+    "in",
+    "on",
+    "for",
+    "and",
+    "or",
+    "with",
+    "i",
+    "can",
+    "you",
+    "tell",
+    "about",
+    "explain",
+    "give",
 }
 
 
@@ -195,7 +236,7 @@ def _fallback_query(prompt: str) -> str:
 
 
 def chat_loop(
-    one_shot: Optional[str] = None,
+    one_shot: str | None = None,
     stream: Callable[[str], None] = None,
 ) -> int:
     """Run the REPL. If *one_shot* is given, handle a single message and exit.

@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
 import pytest
 
-from squad.devhelper import Severity, Finding, scan_paths, render_report, AuditRecord
+from squad.devhelper import Severity, render_report, scan_paths
 
 
 @pytest.fixture

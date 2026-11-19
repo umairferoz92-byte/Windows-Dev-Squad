@@ -17,8 +17,8 @@ import os
 import shutil
 import subprocess
 import sys
-from dataclasses import dataclass, field
-from typing import Optional, Sequence
+from collections.abc import Sequence
+from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
@@ -38,74 +38,98 @@ class ToolManifestEntry:
 # The 12 official tools from the blueprint manifest
 BLUEPRINT_MANIFEST: tuple[ToolManifestEntry, ...] = (
     ToolManifestEntry(
-        name="nmap", display="Nmap",
-        purpose="Port/service recon", binary="nmap",
+        name="nmap",
+        display="Nmap",
+        purpose="Port/service recon",
+        binary="nmap",
         install_cmd="winget install Insecure.Nmap",
         version_arg="--version",
     ),
     ToolManifestEntry(
-        name="zap", display="OWASP ZAP",
-        purpose="Web app DAST", binary="zap.sh",
+        name="zap",
+        display="OWASP ZAP",
+        purpose="Web app DAST",
+        binary="zap.sh",
         install_cmd="winget install ZAP.ZAP",
         version_arg="-version",
     ),
     ToolManifestEntry(
-        name="nikto", display="Nikto",
-        purpose="Web server misconfig scan", binary="nikto",
-        install_cmd="winget install sullo.Nikto", # or via WSL/Strawberry Perl
+        name="nikto",
+        display="Nikto",
+        purpose="Web server misconfig scan",
+        binary="nikto",
+        install_cmd="winget install sullo.Nikto",  # or via WSL/Strawberry Perl
         version_arg="-Version",
     ),
     ToolManifestEntry(
-        name="testssl", display="testssl.sh",
-        purpose="TLS/SSL config check", binary="testssl.sh",
+        name="testssl",
+        display="testssl.sh",
+        purpose="TLS/SSL config check",
+        binary="testssl.sh",
         install_cmd="git clone https://github.com/drwetter/testssl.sh.git",
         version_arg="--version",
     ),
     ToolManifestEntry(
-        name="sqlmap", display="sqlmap",
-        purpose="SQL injection testing", binary="sqlmap",
+        name="sqlmap",
+        display="sqlmap",
+        purpose="SQL injection testing",
+        binary="sqlmap",
         install_cmd="pip install sqlmap",
         version_arg="--version",
     ),
     ToolManifestEntry(
-        name="semgrep", display="Semgrep",
-        purpose="SAST, code-level bugs", binary="semgrep",
+        name="semgrep",
+        display="Semgrep",
+        purpose="SAST, code-level bugs",
+        binary="semgrep",
         install_cmd="pip install semgrep",
         version_arg="--version",
     ),
     ToolManifestEntry(
-        name="bandit", display="Bandit",
-        purpose="Python SAST", binary="bandit",
+        name="bandit",
+        display="Bandit",
+        purpose="Python SAST",
+        binary="bandit",
         install_cmd="pip install bandit",
         version_arg="--version",
     ),
     ToolManifestEntry(
-        name="trivy", display="Trivy",
-        purpose="Dependency & container CVEs", binary="trivy",
+        name="trivy",
+        display="Trivy",
+        purpose="Dependency & container CVEs",
+        binary="trivy",
         install_cmd="winget install AquaSecurity.Trivy",
         version_arg="--version",
     ),
     ToolManifestEntry(
-        name="gitleaks", display="Gitleaks",
-        purpose="Secret scanning", binary="gitleaks",
+        name="gitleaks",
+        display="Gitleaks",
+        purpose="Secret scanning",
+        binary="gitleaks",
         install_cmd="winget install gitleaks",
         version_arg="version",
     ),
     ToolManifestEntry(
-        name="ffuf", display="ffuf",
-        purpose="Content/endpoint discovery", binary="ffuf",
+        name="ffuf",
+        display="ffuf",
+        purpose="Content/endpoint discovery",
+        binary="ffuf",
         install_cmd="go install github.com/ffuf/ffuf/v2@latest",
         version_arg="-V",
     ),
     ToolManifestEntry(
-        name="gobuster", display="Gobuster",
-        purpose="Content/endpoint discovery", binary="gobuster",
+        name="gobuster",
+        display="Gobuster",
+        purpose="Content/endpoint discovery",
+        binary="gobuster",
         install_cmd="winget install OJ.Gobuster",
         version_arg="version",
     ),
     ToolManifestEntry(
-        name="hydra", display="Hydra",
-        purpose="Network login brute-forcer", binary="hydra",
+        name="hydra",
+        display="Hydra",
+        purpose="Network login brute-forcer",
+        binary="hydra",
         install_cmd="winget install hydra",
         version_arg="-v",
     ),
@@ -138,10 +162,7 @@ def detect_tool(entry: ToolManifestEntry) -> ToolStatus:
     version = ""
     if installed:
         try:
-            proc = subprocess.run(
-                [path, entry.version_arg],
-                capture_output=True, text=True, timeout=5
-            )
+            proc = subprocess.run([path, entry.version_arg], capture_output=True, text=True, timeout=5)
             out = (proc.stdout or "") + (proc.stderr or "")
             # take first line of version output
             version = out.strip().splitlines()[0][:40] if out.strip() else "installed"

@@ -77,6 +77,7 @@ def live_refresh(
     poll). Raises ``StopIteration`` out of poll to end the loop.
     """
     import time
+
     from rich.live import Live
 
     def _to_cards(raw):

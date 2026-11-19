@@ -50,14 +50,8 @@ def test_run_kills_process_tree_on_timeout(tmp_path):
     """A timed-out command must not leave its children (grandchildren) behind."""
     adapter = get_adapter()
     pidfile = tmp_path / "grandchild.pid"
-    grandchild = (
-        f"import os, time; open({str(pidfile)!r}, 'w').write(str(os.getpid())); time.sleep(60)"
-    )
-    parent = (
-        "import subprocess, sys, time; "
-        f"subprocess.Popen([sys.executable, '-c', {grandchild!r}]); "
-        "time.sleep(60)"
-    )
+    grandchild = f"import os, time; open({str(pidfile)!r}, 'w').write(str(os.getpid())); time.sleep(60)"
+    parent = f"import subprocess, sys, time; subprocess.Popen([sys.executable, '-c', {grandchild!r}]); time.sleep(60)"
     result = adapter.run([sys.executable, "-c", parent], timeout=2)
     assert result.timed_out is True
 

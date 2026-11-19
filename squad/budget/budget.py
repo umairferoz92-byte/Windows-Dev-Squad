@@ -50,30 +50,20 @@ class BudgetManager:
     def paused(self) -> bool:
         return self._paused
 
-    def preflight(
-        self, agent: str, provider: str, model: str, input_tokens: int, output_tokens: int
-    ) -> CallEstimate:
+    def preflight(self, agent: str, provider: str, model: str, input_tokens: int, output_tokens: int) -> CallEstimate:
         if self._paused:
             raise BudgetError("budget is paused (spike breaker)")
 
         if input_tokens > self.limits.per_call_input_tokens:
-            raise BudgetError(
-                f"input tokens {input_tokens} exceed per-call cap "
-                f"{self.limits.per_call_input_tokens}"
-            )
+            raise BudgetError(f"input tokens {input_tokens} exceed per-call cap {self.limits.per_call_input_tokens}")
         if output_tokens > self.limits.per_call_output_tokens:
-            raise BudgetError(
-                f"output tokens {output_tokens} exceed per-call cap "
-                f"{self.limits.per_call_output_tokens}"
-            )
+            raise BudgetError(f"output tokens {output_tokens} exceed per-call cap {self.limits.per_call_output_tokens}")
 
         price = self.prices.price_for(model)
         if price is None:
             raise BudgetError(f"unknown model '{model}' (blocked — not in prices.yaml)")
 
-        cost = (input_tokens / 1_000_000) * price.input_per_mtok + (
-            output_tokens / 1_000_000
-        ) * price.output_per_mtok
+        cost = (input_tokens / 1_000_000) * price.input_per_mtok + (output_tokens / 1_000_000) * price.output_per_mtok
         estimate = CallEstimate(model, input_tokens, output_tokens, cost)
         self._check_layers(agent, provider, cost)
         return estimate
@@ -143,6 +133,4 @@ class BudgetManager:
                 self.last_warning = "spike limit exceeded — agents paused"
 
         if self.ledger is not None:
-            self.ledger.record(
-                run_id, agent, provider, estimate.model, tin, tout, cached_tokens, cost, ts
-            )
+            self.ledger.record(run_id, agent, provider, estimate.model, tin, tout, cached_tokens, cost, ts)

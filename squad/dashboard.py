@@ -11,7 +11,6 @@ Features:
 from __future__ import annotations
 
 import os
-import sys
 import time
 from pathlib import Path
 
@@ -44,6 +43,7 @@ ASCII_BANNER = r"""
 def _version() -> str:
     try:
         from squad.version import __version__
+
         return __version__
     except Exception:
         return "?"
@@ -52,6 +52,7 @@ def _version() -> str:
 def _role() -> str:
     try:
         from squad.roles import current_role
+
         return current_role()
     except Exception:
         return "owner"
@@ -94,6 +95,7 @@ def _scans() -> tuple[int, str]:
 
 def _missing_keys() -> list[str]:
     from squad.providers import factory
+
     name, api_key, _spec = factory.resolve_provider()
     if api_key or _spec.free:
         return []
@@ -139,7 +141,10 @@ def save_api_key(provider_name: str, key_value: str) -> tuple[bool, str]:
         except Exception:
             pass
 
-    return True, f"Saved {key_env} and set active provider to '{provider_name}' ({', '.join(written)})."
+    return (
+        True,
+        f"Saved {key_env} and set active provider to '{provider_name}' ({', '.join(written)}).",
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -151,6 +156,7 @@ def _banner() -> Text:
 
 def _session_panel(role: str, ver: str) -> Panel:
     from squad.providers import factory
+
     p_name, p_key, p_spec = factory.resolve_provider()
     model_str = f"{p_name} ({'free' if p_spec.free else ('key set' if p_key else 'no key')})"
 
@@ -254,8 +260,7 @@ def build_dashboard() -> Group:
     grid.add_row(left, right)
 
     summary = Text(
-        f"  {total} tools · {adv} advisories · {prac} practices · "
-        f"run `squad chat` for interactive help  ",
+        f"  {total} tools · {adv} advisories · {prac} practices · run `squad chat` for interactive help  ",
         style=BLUE_DIM,
     )
 
@@ -269,6 +274,8 @@ def build_dashboard() -> Group:
         summary,
         prompt,
     )
+
+
 HELP_TEXT = """\
 Available Commands:
   menu                   Open interactive action menu
@@ -401,15 +408,21 @@ def dashboard_command() -> None:
     )
 
     transcript: list[Text] = [
-        Text("Welcome to Windows Dev Squad! Use Up/Down for command history, PgUp/PgDn to scroll.", style=BLUE_DIM),
-        Text("Type `menu` for options, or `setkey <provider> <key>` to configure an API key live.", style=BLUE_BRIGHT),
+        Text(
+            "Welcome to Windows Dev Squad! Use Up/Down for command history, PgUp/PgDn to scroll.",
+            style=BLUE_DIM,
+        ),
+        Text(
+            "Type `menu` for options, or `setkey <provider> <key>` to configure an API key live.",
+            style=BLUE_BRIGHT,
+        ),
     ]
 
     editor = LineEditor()
     prompt_mode = "command"
     pending_provider = ""
     dirty = True
-    
+
     last_header_update = 0.0
     header_panel = _header()
 
@@ -428,7 +441,7 @@ def dashboard_command() -> None:
         if now - last_header_update > 5.0:
             header_panel = _header()
             last_header_update = now
-            
+
         layout["header"].update(header_panel)
 
         if scroll >= len(transcript):
@@ -451,8 +464,8 @@ def dashboard_command() -> None:
         nonlocal scroll
         scroll = 0
         if isinstance(msg, str):
-            for l in msg.splitlines():
-                transcript.append(Text(l, style=style))
+            for line in msg.splitlines():
+                transcript.append(Text(line, style=style))
         else:
             transcript.append(msg)
 
@@ -474,7 +487,10 @@ def dashboard_command() -> None:
         # Menu selections
         if cmd == "1":
             prompt_mode = "setkey_provider"
-            append_transcript("Enter provider name (e.g. openai, openrouter, anthropic, groq, gemini):", style=BLUE_BRIGHT)
+            append_transcript(
+                "Enter provider name (e.g. openai, openrouter, anthropic, groq, gemini):",
+                style=BLUE_BRIGHT,
+            )
             return False
         elif cmd == "2":
             ok, msg = save_api_key("ollama", "free")
@@ -510,12 +526,16 @@ def dashboard_command() -> None:
                 append_transcript(msg, style=GREEN if ok else RED)
             else:
                 prompt_mode = "setkey_provider"
-                append_transcript("Enter provider name (e.g. openai, openrouter, anthropic, groq):", style=BLUE_BRIGHT)
+                append_transcript(
+                    "Enter provider name (e.g. openai, openrouter, anthropic, groq):",
+                    style=BLUE_BRIGHT,
+                )
             return False
 
         append_transcript(f"squad> {cmd}", style=BLUE_BRIGHT)
         try:
             from squad.chat import offline
+
             intent = offline.parse(cmd)
             if intent.kind == "llm":
                 append_transcript(_research(cmd), style="white")
@@ -528,8 +548,9 @@ def dashboard_command() -> None:
         return False
 
     try:
-        from rich.live import Live
         import msvcrt
+
+        from rich.live import Live
 
         with Live(layout, console=console, screen=True, refresh_per_second=25) as live:
             while True:
@@ -621,28 +642,83 @@ def _research(prompt: str) -> str:
         reply = llm_tier.answer(prompt)
         prefix = f"[llm/{reply.model}] " if reply.model else "[llm] "
         return prefix + reply.text
-    except (llm_tier.NoKey, llm_tier.NoModel) as exc:
+    except (llm_tier.NoKey, llm_tier.NoModel):
         from squad.chat import offline_answer
+
         kb = offline_answer.lookup(prompt)
         if kb:
             return kb + "\n[note] offline answer — no API key needed. Use `setkey` to add one."
         q = " ".join(
-            w for w in prompt.split() if w.lower() not in {
-                "what", "is", "are", "the", "a", "an", "how", "why", "to", "me",
-                "my", "in", "on", "for", "and", "or", "with", "i", "can", "you",
-                "tell", "about", "explain", "give", "do", "does",
+            w
+            for w in prompt.split()
+            if w.lower()
+            not in {
+                "what",
+                "is",
+                "are",
+                "the",
+                "a",
+                "an",
+                "how",
+                "why",
+                "to",
+                "me",
+                "my",
+                "in",
+                "on",
+                "for",
+                "and",
+                "or",
+                "with",
+                "i",
+                "can",
+                "you",
+                "tell",
+                "about",
+                "explain",
+                "give",
+                "do",
+                "does",
             }
         )[:80]
         out = run_command(["intel", "search", q])
         return out + "\n[note] set an LLM API key (type `setkey`) to unlock full LLM research."
     except Exception as exc:
-        q = " ".join(w for w in prompt.split() if w.lower() not in {
-            "what", "is", "are", "the", "a", "an", "how", "why", "to", "me",
-            "my", "in", "on", "for", "and", "or", "with", "i", "can", "you",
-            "tell", "about", "explain", "give", "do", "does",
-        })[:80]
+        q = " ".join(
+            w
+            for w in prompt.split()
+            if w.lower()
+            not in {
+                "what",
+                "is",
+                "are",
+                "the",
+                "a",
+                "an",
+                "how",
+                "why",
+                "to",
+                "me",
+                "my",
+                "in",
+                "on",
+                "for",
+                "and",
+                "or",
+                "with",
+                "i",
+                "can",
+                "you",
+                "tell",
+                "about",
+                "explain",
+                "give",
+                "do",
+                "does",
+            }
+        )[:80]
         out = run_command(["intel", "search", q])
-        return out + "\n[note] LLM unavailable (%s); fell back to offline intel." % type(exc).__name__
+        return out + f"\n[note] LLM unavailable ({type(exc).__name__}); fell back to offline intel."
 
 
 def main() -> None:

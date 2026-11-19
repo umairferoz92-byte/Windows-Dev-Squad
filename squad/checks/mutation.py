@@ -8,12 +8,13 @@ threshold blocks "done".
 The mutation engine is dependency-free (a robust operator set on Python source).
 The test runner is injectable so CI and tests can use a stub.
 """
+
 from __future__ import annotations
 
 import ast
 import copy
 import tempfile
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 
 
@@ -146,8 +147,7 @@ class MutationGate:
     runs the configured test command in a temp copy of each mutated file.
     """
 
-    def __init__(self, test_command: list[str] | None = None, threshold: float = 0.6,
-                 run_tests=None):
+    def __init__(self, test_command: list[str] | None = None, threshold: float = 0.6, run_tests=None):
         self.test_command = test_command or ["python", "-m", "pytest", "-q"]
         self.threshold = threshold
         self._run_tests = run_tests
@@ -155,10 +155,14 @@ class MutationGate:
     def changed_files(self, cwd: Path) -> list[str]:
         """Return .py files with uncommitted changes via git status."""
         import subprocess
+
         try:
             out = subprocess.run(
-                ["git", "diff", "--name-only", "HEAD"], cwd=str(cwd),
-                capture_output=True, text=True, timeout=10,
+                ["git", "diff", "--name-only", "HEAD"],
+                cwd=str(cwd),
+                capture_output=True,
+                text=True,
+                timeout=10,
             ).stdout
         except Exception:
             return []
@@ -187,17 +191,21 @@ class MutationGate:
             total = len(mutants)
             score = (killed / total) if total else 1.0
             rep = MutationReport(
-                file=str(f), mutants=total, killed=killed,
-                survived=survived, score=score, threshold=self.threshold,
+                file=str(f),
+                mutants=total,
+                killed=killed,
+                survived=survived,
+                score=score,
+                threshold=self.threshold,
             )
             reports.append(rep)
         return reports
 
     def _run_default(self, cwd: Path) -> int:
         import subprocess
+
         try:
-            return subprocess.run(list(self.test_command), cwd=str(cwd),
-                                  capture_output=True, timeout=60).returncode
+            return subprocess.run(list(self.test_command), cwd=str(cwd), capture_output=True, timeout=60).returncode
         except Exception:
             return 1
 

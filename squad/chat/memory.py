@@ -8,6 +8,7 @@ replayed into the LLM tier so the agent can actually *interact* with the user
 across turns and across sessions instead of treating every message in
 isolation.
 """
+
 from __future__ import annotations
 
 import json
@@ -77,9 +78,7 @@ def load_history() -> list[dict]:
 def append(role: str, content: str) -> list[dict]:
     """Append one turn, persist, and return the trimmed history."""
     turns = _load()
-    turns.append(
-        {"role": role, "content": content, "ts": time.time()}
-    )
+    turns.append({"role": role, "content": content, "ts": time.time()})
     _save(turns)
     return _trim(turns)
 

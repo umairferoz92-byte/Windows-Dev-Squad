@@ -8,6 +8,7 @@ State machine: RUNNING -> (resume) RUNNING / (rollback) ROLLED_BACK /
                        (mark-failed) FAILED. A run that was RUNNING when the
                        process died is offered again on the next start.
 """
+
 from __future__ import annotations
 
 import json
@@ -50,31 +51,55 @@ class RunStateStore:
         rs.updated_at = time.time()
         self._db.execute(
             "INSERT OR REPLACE INTO runs VALUES (?,?,?,?,?,?,?,?)",
-            (rs.run_id, rs.task, json.dumps(rs.plan), rs.step, rs.branch,
-             rs.budget_used, rs.status, rs.updated_at),
+            (
+                rs.run_id,
+                rs.task,
+                json.dumps(rs.plan),
+                rs.step,
+                rs.branch,
+                rs.budget_used,
+                rs.status,
+                rs.updated_at,
+            ),
         )
         self._db.commit()
 
     def get(self, run_id: str) -> RunState | None:
         row = self._db.execute(
-            "SELECT run_id, task, plan, step, branch, budget_used, status, updated_at "
-            "FROM runs WHERE run_id=?", (run_id,)
+            "SELECT run_id, task, plan, step, branch, budget_used, status, updated_at FROM runs WHERE run_id=?",
+            (run_id,),
         ).fetchone()
         if not row:
             return None
-        return RunState(run_id=row[0], task=row[1], plan=json.loads(row[2]),
-                        step=row[3], branch=row[4], budget_used=row[5],
-                        status=row[6], updated_at=row[7])
+        return RunState(
+            run_id=row[0],
+            task=row[1],
+            plan=json.loads(row[2]),
+            step=row[3],
+            branch=row[4],
+            budget_used=row[5],
+            status=row[6],
+            updated_at=row[7],
+        )
 
     def unfinished(self) -> list[RunState]:
         """Runs still RUNNING (i.e. a process died mid-run)."""
         rows = self._db.execute(
-            "SELECT run_id, task, plan, step, branch, budget_used, status, updated_at "
-            "FROM runs WHERE status='RUNNING' ORDER BY updated_at"
+            "SELECT run_id, task, plan, step, branch, budget_used, status, updated_at FROM runs WHERE status='RUNNING' ORDER BY updated_at"
         ).fetchall()
-        return [RunState(run_id=r[0], task=r[1], plan=json.loads(r[2]), step=r[3],
-                         branch=r[4], budget_used=r[5], status=r[6], updated_at=r[7])
-                for r in rows]
+        return [
+            RunState(
+                run_id=r[0],
+                task=r[1],
+                plan=json.loads(r[2]),
+                step=r[3],
+                branch=r[4],
+                budget_used=r[5],
+                status=r[6],
+                updated_at=r[7],
+            )
+            for r in rows
+        ]
 
     def resume(self, run_id: str) -> RunState | None:
         rs = self.get(run_id)

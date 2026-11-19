@@ -1,4 +1,5 @@
 """Retention: partition entries (audit/ledger) by age for archiving."""
+
 from __future__ import annotations
 
 import json
@@ -6,9 +7,7 @@ import time
 from pathlib import Path
 
 
-def partition_by_age(
-    entries: list[dict], max_age_days: int, now: float | None = None
-) -> tuple[list[dict], list[dict]]:
+def partition_by_age(entries: list[dict], max_age_days: int, now: float | None = None) -> tuple[list[dict], list[dict]]:
     """Return (keep, archive): entries within max_age_days stay, older ones go to the archive."""
     cutoff = (time.time() if now is None else now) - max_age_days * 86400
     keep = [entry for entry in entries if entry.get("timestamp", 0) >= cutoff]

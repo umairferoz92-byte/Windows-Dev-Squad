@@ -3,6 +3,7 @@
 Differs from the OpenAI-compatible shape: POST /v1/messages, a top-level
 ``max_tokens`` and ``system`` string, and a ``anthropic-version`` header.
 """
+
 from __future__ import annotations
 
 import httpx
@@ -71,11 +72,7 @@ class AnthropicProvider(Provider):
 
         data = resp.json()
         # text blocks are the content; usage is nested in data["usage"].
-        text = "".join(
-            b.get("text", "")
-            for b in (data.get("content") or [])
-            if b.get("type") == "text"
-        )
+        text = "".join(b.get("text", "") for b in (data.get("content") or []) if b.get("type") == "text")
         usage_raw = data.get("usage")
         usage = None
         if usage_raw:

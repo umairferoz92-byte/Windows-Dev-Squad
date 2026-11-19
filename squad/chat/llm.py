@@ -8,6 +8,7 @@ never claims to have executed an action (the offline tier does execution). Raise
 ``NoKey`` / ``NoModel`` when the prerequisite is missing so the REPL can fall back
 to offline answers.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -53,8 +54,9 @@ class LlmReply:
 def _load_config_models():
     try:
         from squad.checks.config import load_repo_config
+
         cfg = load_repo_config("squad.yaml")
-        return (cfg.get("models") or {})
+        return cfg.get("models") or {}
     except Exception:
         return {}
 
@@ -69,10 +71,7 @@ def _resolve_provider(models_cfg: dict):
 
     name, api_key, spec = factory.resolve_provider(config=models_cfg)
     if not api_key and not spec.free:
-        raise NoKey(
-            f"no {spec.key_env} — set it in your repo .env or environment, "
-            f"then run `squad providers test` to confirm."
-        )
+        raise NoKey(f"no {spec.key_env} — set it in your repo .env or environment, then run `squad providers test` to confirm.")
     provider = factory.build_provider(name, api_key or "", None)  # allowlist checked per-role
     return name, provider
 
@@ -101,6 +100,7 @@ def answer(prompt: str, max_tokens: int = 900, history: list[dict] | None = None
     # installed Ollama model when this provider is active.
     if _name == "ollama":
         from squad.providers import factory
+
         installed = factory.ollama_models()
         if installed:
             worker = installed[:1]

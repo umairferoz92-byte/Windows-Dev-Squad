@@ -1,13 +1,12 @@
 """Unit tests for the two-tier chatbot (offline parser + LLM routing)."""
+
 import sys
 from pathlib import Path
-
-import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from squad.chat import offline
-from squad.chat.offline import Intent, parse
+from squad.chat.offline import parse
 
 
 def test_quit_commands():

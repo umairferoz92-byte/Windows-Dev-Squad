@@ -20,47 +20,35 @@ def test_agent_cannot_approve():
 def test_valid_within_ttl():
     store = ApprovalStore()
     approval = store.grant("human", "edit_file", "/repo", {"path": "/repo/src/a.py"})
-    found = store.find_valid(
-        "edit_file", "/repo", {"path": "/repo/src/a.py"}, now=approval.created_at + 1
-    )
+    found = store.find_valid("edit_file", "/repo", {"path": "/repo/src/a.py"}, now=approval.created_at + 1)
     assert found is not None
 
 
 def test_expired_rejected():
     store = ApprovalStore()
-    approval = store.grant(
-        "human", "edit_file", "/repo", {"path": "/repo/src/a.py"}, ttl_seconds=300
-    )
-    found = store.find_valid(
-        "edit_file", "/repo", {"path": "/repo/src/a.py"}, now=approval.created_at + 301
-    )
+    approval = store.grant("human", "edit_file", "/repo", {"path": "/repo/src/a.py"}, ttl_seconds=300)
+    found = store.find_valid("edit_file", "/repo", {"path": "/repo/src/a.py"}, now=approval.created_at + 301)
     assert found is None
 
 
 def test_wrong_command_rejected():
     store = ApprovalStore()
     approval = store.grant("human", "edit_file", "/repo", {"path": "/repo/src/a.py"})
-    found = store.find_valid(
-        "git_commit", "/repo", {"path": "/repo/src/a.py"}, now=approval.created_at + 1
-    )
+    found = store.find_valid("git_commit", "/repo", {"path": "/repo/src/a.py"}, now=approval.created_at + 1)
     assert found is None
 
 
 def test_wrong_cwd_rejected():
     store = ApprovalStore()
     approval = store.grant("human", "edit_file", "/repo", {"path": "/repo/src/a.py"})
-    found = store.find_valid(
-        "edit_file", "/other", {"path": "/repo/src/a.py"}, now=approval.created_at + 1
-    )
+    found = store.find_valid("edit_file", "/other", {"path": "/repo/src/a.py"}, now=approval.created_at + 1)
     assert found is None
 
 
 def test_wrong_args_rejected():
     store = ApprovalStore()
     approval = store.grant("human", "edit_file", "/repo", {"path": "/repo/src/a.py"})
-    found = store.find_valid(
-        "edit_file", "/repo", {"path": "/repo/src/b.py"}, now=approval.created_at + 1
-    )
+    found = store.find_valid("edit_file", "/repo", {"path": "/repo/src/b.py"}, now=approval.created_at + 1)
     assert found is None
 
 

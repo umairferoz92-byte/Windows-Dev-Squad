@@ -22,9 +22,7 @@ class JobQueue:
         self.path = Path(path)
         self.path.parent.mkdir(parents=True, exist_ok=True)
 
-    def enqueue(
-        self, task: str, *, agent: str | None = None, enqueued_at: float | None = None
-    ) -> dict:
+    def enqueue(self, task: str, *, agent: str | None = None, enqueued_at: float | None = None) -> dict:
         job = {
             "id": uuid.uuid4().hex,
             "task": task,
@@ -39,11 +37,7 @@ class JobQueue:
     def load(self) -> list[dict]:
         if not self.path.exists():
             return []
-        return [
-            json.loads(line)
-            for line in self.path.read_text(encoding="utf-8").splitlines()
-            if line.strip()
-        ]
+        return [json.loads(line) for line in self.path.read_text(encoding="utf-8").splitlines() if line.strip()]
 
     def pending(self) -> list[dict]:
         return [job for job in self.load() if job.get("status") == "pending"]

@@ -15,6 +15,7 @@ and cleaned on a healthy volume and the stale-junction crash cannot occur.
 import os
 import sys
 
+
 def pytest_configure(config):
     if sys.platform != "win32":
         return

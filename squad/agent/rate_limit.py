@@ -9,14 +9,11 @@ Provides:
 
 from __future__ import annotations
 
-import os
-import signal
 import subprocess
 import threading
 import time
 import uuid
 from dataclasses import dataclass, field
-from typing import Optional
 
 
 @dataclass

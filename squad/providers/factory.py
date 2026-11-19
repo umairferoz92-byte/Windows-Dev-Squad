@@ -12,6 +12,7 @@ local endpoint that needs no key):
 Every provider is optional: with no key and no local server the LLM tier
 raises NoKey and the chatbot falls back to offline answers, exactly as before.
 """
+
 from __future__ import annotations
 
 import os
@@ -39,12 +40,28 @@ _SPECS: dict[str, _Spec] = {
     "openai": _Spec("openai", "OPENAI_API_KEY", "https://api.openai.com/v1", OpenAICompatibleProvider),
     "openrouter": _Spec("openrouter", "OPENROUTER_API_KEY", "https://openrouter.ai/api/v1", OpenAICompatibleProvider),
     "anthropic": _Spec("anthropic", "ANTHROPIC_API_KEY", "https://api.anthropic.com/v1", AnthropicProvider),
-    "groq": _Spec("groq", "GROQ_API_KEY", "https://api.groq.com/openai/v1", OpenAICompatibleProvider, free=True),
+    "groq": _Spec(
+        "groq",
+        "GROQ_API_KEY",
+        "https://api.groq.com/openai/v1",
+        OpenAICompatibleProvider,
+        free=True,
+    ),
     "mistral": _Spec("mistral", "MISTRAL_API_KEY", "https://api.mistral.ai/v1", OpenAICompatibleProvider),
     "together": _Spec("together", "TOGETHER_API_KEY", "https://api.together.xyz/v1", OpenAICompatibleProvider),
-    "fireworks": _Spec("fireworks", "FIREWORKS_API_KEY", "https://api.fireworks.ai/inference/v1", OpenAICompatibleProvider),
+    "fireworks": _Spec(
+        "fireworks",
+        "FIREWORKS_API_KEY",
+        "https://api.fireworks.ai/inference/v1",
+        OpenAICompatibleProvider,
+    ),
     # Google Gemini exposes an OpenAI-compatible endpoint (key via query/header).
-    "gemini": _Spec("gemini", "GEMINI_API_KEY", "https://generativelanguage.googleapis.com/v1beta/openai", OpenAICompatibleProvider),
+    "gemini": _Spec(
+        "gemini",
+        "GEMINI_API_KEY",
+        "https://generativelanguage.googleapis.com/v1beta/openai",
+        OpenAICompatibleProvider,
+    ),
     # Free, fully-local endpoints that need no API key.
     "ollama": _Spec("ollama", None, "http://localhost:11434/v1", OpenAICompatibleProvider, free=True),
     "lmstudio": _Spec("lmstudio", None, "http://localhost:1234/v1", OpenAICompatibleProvider, free=True),
@@ -75,7 +92,7 @@ def provider_key_env(name: str) -> str | None:
 
 
 # --- Free local Ollama helpers ----------------------------------------------
-import httpx as _httpx
+import httpx as _httpx  # noqa: E402  # lazy optional dep (httpx not required at import time)
 
 
 def ollama_base_url() -> str:

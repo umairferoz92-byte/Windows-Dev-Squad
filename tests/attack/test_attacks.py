@@ -25,11 +25,7 @@ class ScriptedProvider:
         self.responses = list(responses)
 
     def chat(self, model, messages, max_tokens=1024):
-        text = (
-            self.responses.pop(0)
-            if self.responses
-            else '{"action": "final", "args": {"message": "done"}}'
-        )
+        text = self.responses.pop(0) if self.responses else '{"action": "final", "args": {"message": "done"}}'
         return ChatResponse(text=text, usage=None, model=model)
 
 
@@ -68,9 +64,7 @@ def test_prompt_injection_unknown_action_default_deny(tmp_path):
 
 def test_prompt_injection_out_of_scope_edit_denied(tmp_path):
     outside = tmp_path / "secret.txt"
-    provider = ScriptedProvider(
-        [json.dumps({"action": "edit_file", "args": {"path": str(outside), "content": "exfil"}})]
-    )
+    provider = ScriptedProvider([json.dumps({"action": "edit_file", "args": {"path": str(outside), "content": "exfil"}})])
     scope = tmp_path / "scope"
     scope.mkdir()
     agent = _agent(provider, tmp_path, policy=Policy({"write_scope": [str(scope)]}))
@@ -84,9 +78,7 @@ def test_prompt_injection_out_of_scope_edit_denied(tmp_path):
 
 def test_secrets_not_leaked_to_subprocess(monkeypatch):
     monkeypatch.setenv("OPENROUTER_API_KEY", "sk-super-secret")
-    result = run_command(
-        [sys.executable, "-c", "import os; print(os.environ.get('OPENROUTER_API_KEY',''))"]
-    )
+    result = run_command([sys.executable, "-c", "import os; print(os.environ.get('OPENROUTER_API_KEY',''))"])
     assert "sk-super-secret" not in result.stdout
 
 
@@ -107,9 +99,7 @@ def test_guard_bypass_encoded_traversal():
 @pytest.mark.skipif(sys.platform != "win32", reason="Windows backslash traversal")
 def test_guard_bypass_backslash_traversal_windows():
     policy = Policy({"write_scope": ["C:/repo/src"]})
-    req = ToolRequest(
-        "edit_file", {"path": r"C:\repo\src\..\..\Windows\System32\config"}, "C:/repo"
-    )
+    req = ToolRequest("edit_file", {"path": r"C:\repo\src\..\..\Windows\System32\config"}, "C:/repo")
     assert evaluate(req, policy).verdict is not Verdict.ALLOW
 
 

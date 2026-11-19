@@ -22,11 +22,7 @@ class ScriptedProvider:
         self.responses = list(responses)
 
     def chat(self, model, messages, max_tokens=1024):
-        text = (
-            self.responses.pop(0)
-            if self.responses
-            else '{"action": "final", "args": {"message": "done"}}'
-        )
+        text = self.responses.pop(0) if self.responses else '{"action": "final", "args": {"message": "done"}}'
         return ChatResponse(text=text, usage=None, model=model)
 
 
@@ -64,18 +60,10 @@ def _agent(provider, cwd, write_scope=None, test_command=None, budget=None, **kw
 def test_agent_fixes_practice_repo(tmp_path):
     repo = tmp_path / "practice"
     shutil.copytree(PRACTICE_DIR, repo)
-    fixed = (
-        '"""Practice target project (throwaway)."""\n'
-        "\n"
-        "\n"
-        "def add(a: int, b: int) -> int:\n"
-        "    return a + b\n"
-    )
+    fixed = '"""Practice target project (throwaway)."""\n\n\ndef add(a: int, b: int) -> int:\n    return a + b\n'
     provider = ScriptedProvider(
         [
-            json.dumps(
-                {"action": "edit_file", "args": {"path": str(repo / "app.py"), "content": fixed}}
-            ),
+            json.dumps({"action": "edit_file", "args": {"path": str(repo / "app.py"), "content": fixed}}),
             json.dumps({"action": "final", "args": {"message": "done"}}),
         ]
     )
@@ -86,9 +74,7 @@ def test_agent_fixes_practice_repo(tmp_path):
 
 
 def test_agent_loop_detection(tmp_path):
-    action = json.dumps(
-        {"action": "edit_file", "args": {"path": str(tmp_path / "a.py"), "content": "x"}}
-    )
+    action = json.dumps({"action": "edit_file", "args": {"path": str(tmp_path / "a.py"), "content": "x"}})
     provider = ScriptedProvider([action, action])
     agent = _agent(provider, tmp_path)
     with pytest.raises(LoopDetectedError):
@@ -127,9 +113,7 @@ def test_agent_guard_denies_outside_scope(tmp_path):
     scope = tmp_path / "scope"
     scope.mkdir()
     outside = tmp_path / "outside.txt"
-    provider = ScriptedProvider(
-        [json.dumps({"action": "edit_file", "args": {"path": str(outside), "content": "x"}})]
-    )
+    provider = ScriptedProvider([json.dumps({"action": "edit_file", "args": {"path": str(outside), "content": "x"}})])
     agent = _agent(provider, tmp_path, write_scope=[str(scope)])
     result = agent.run("edit outside")
     assert result.ok is False
@@ -154,9 +138,7 @@ def test_agent_audits_actions(tmp_path):
     audit = AuditLog(str(tmp_path / "audit.jsonl"))
     provider = ScriptedProvider(
         [
-            json.dumps(
-                {"action": "edit_file", "args": {"path": str(tmp_path / "a.py"), "content": "x"}}
-            ),
+            json.dumps({"action": "edit_file", "args": {"path": str(tmp_path / "a.py"), "content": "x"}}),
             json.dumps({"action": "final", "args": {"message": "done"}}),
         ]
     )

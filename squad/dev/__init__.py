@@ -7,20 +7,31 @@ with integrated real-time security and coding intelligence.
 from __future__ import annotations
 
 import os
-import sys
-import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
 
-from squad.devhelper import scan_paths, render_report as render_devhelper_report
+from squad.devhelper import render_report as render_devhelper_report
+from squad.devhelper import scan_paths
 from squad.intel import RealTimeIntelEngine
 
 
 def _sample_arg(param: str) -> str:
     """Choose a sensible sample literal for a function parameter name."""
     name = param.lower()
-    if any(k in name for k in ("flag", "enabled", "disabled", "verbose", "dry_run", "force", "check", "strict", "recursive")):
+    if any(
+        k in name
+        for k in (
+            "flag",
+            "enabled",
+            "disabled",
+            "verbose",
+            "dry_run",
+            "force",
+            "check",
+            "strict",
+            "recursive",
+        )
+    ):
         return "True"
     if any(k in name for k in ("price", "cost", "amount", "value", "total", "tax", "rate")):
         return "10.0"
@@ -97,12 +108,14 @@ class DeveloperAssistant:
                         func_len = 0
 
                 # Check missing type hints
-                def_lines = [l for l in lines if l.strip().startswith("def ") and "->" not in l and not l.strip().startswith("def __")]
+                def_lines = [
+                    line for line in lines if line.strip().startswith("def ") and "->" not in line and not line.strip().startswith("def __")
+                ]
                 if len(def_lines) > 3:
                     quality_issues.append(f"File {f.name} has {len(def_lines)} functions missing return type annotations.")
 
                 # Check bare excepts
-                bare_excepts = [l for l in lines if l.strip().startswith("except:")]
+                bare_excepts = [line for line in lines if line.strip().startswith("except:")]
                 if bare_excepts:
                     quality_issues.append(f"File {f.name} uses bare except clause (masks unexpected failures).")
             except Exception:
@@ -153,6 +166,7 @@ class DeveloperAssistant:
         to a smoke test otherwise.
         """
         import ast
+
         src_path = Path(target_file).expanduser().resolve()
         if not src_path.exists() or not src_path.is_file():
             raise FileNotFoundError(f"Source file '{target_file}' not found.")
@@ -220,16 +234,10 @@ class DeveloperAssistant:
                 test_code_lines.append(f"def test_{fname}_basic():")
                 test_code_lines.append(f"    # Verify {fname} functionality")
                 if params:
-                    test_code_lines.append(
-                        f"    result = {module_name}.{fname}({call_args})"
-                    )
-                    test_code_lines.append(
-                        f"    assert result is not None"
-                    )
+                    test_code_lines.append(f"    result = {module_name}.{fname}({call_args})")
+                    test_code_lines.append("    assert result is not None")
                 else:
-                    test_code_lines.append(
-                        f"    assert hasattr({module_name}, '{fname}')"
-                    )
+                    test_code_lines.append(f"    assert hasattr({module_name}, '{fname}')")
                 test_code_lines.append("")
 
         generated_code = "\n".join(test_code_lines)
@@ -256,11 +264,11 @@ class DeveloperAssistant:
             if line.startswith("from __future__ import annotations"):
                 continue
             # Upgrade legacy typing Optional[X] to X | None
-            l = line.replace("Optional[", "").replace("Union[", "")
+            ln = line.replace("Optional[", "").replace("Union[", "")
             # Upgrade bare except
-            if l.strip() == "except:":
-                l = l.replace("except:", "except Exception:")
-            refactored_lines.append(l)
+            if ln.strip() == "except:":
+                ln = ln.replace("except:", "except Exception:")
+            refactored_lines.append(ln)
 
         refactored_code = "\n".join(refactored_lines)
         return refactored_code

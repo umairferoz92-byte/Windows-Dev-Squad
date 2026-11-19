@@ -5,6 +5,7 @@ intent model). Rebuilding the TextVectorization layer with the same config as
 training (squad.models.common.build_text_vectorizer) then restoring its
 vocabulary keeps inference consistent without re-adapting.
 """
+
 from __future__ import annotations
 
 import json

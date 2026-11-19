@@ -109,10 +109,12 @@ dependencies. It is default-deny: an unknown tool asks for approval.
 ```python
 from squad.guard import Policy, ToolRequest, Verdict, evaluate
 
-policy = Policy({
-    "write_scope": ["C:/repo/src"],
-    # Optionally override blocked_components, sensitive_files, sensitive_dirs.
-})
+policy = Policy(
+    {
+        "write_scope": ["C:/repo/src"],
+        # Optionally override blocked_components, sensitive_files, sensitive_dirs.
+    }
+)
 
 request = ToolRequest(
     tool="edit_file",
@@ -122,8 +124,8 @@ request = ToolRequest(
 )
 
 decision = evaluate(request, policy)
-print(decision.verdict)   # Verdict.ALLOW | Verdict.ASK | Verdict.DENY
-print(decision.reason)    # human-readable reason
+print(decision.verdict)  # Verdict.ALLOW | Verdict.ASK | Verdict.DENY
+print(decision.reason)  # human-readable reason
 ```
 
 The decision logic:
@@ -144,9 +146,9 @@ Other useful functions:
 ```python
 from squad.guard import is_within, is_blocked, has_destructive, ApprovalStore
 
-is_within("../secret.txt", ["/repo/src"])          # False (traversal caught)
-is_blocked("/home/u/.ssh/id_rsa", policy)          # True (credential location)
-has_destructive("rm -rf /")                        # True
+is_within("../secret.txt", ["/repo/src"])  # False (traversal caught)
+is_blocked("/home/u/.ssh/id_rsa", policy)  # True (credential location)
+has_destructive("rm -rf /")  # True
 
 store = ApprovalStore()
 a = store.grant("human", "edit_file", "/repo", {"path": "/repo/src/a.py"})

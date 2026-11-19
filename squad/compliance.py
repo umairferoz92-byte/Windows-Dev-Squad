@@ -10,7 +10,7 @@ from __future__ import annotations
 import csv
 import io
 import json
-from typing import Iterable, Sequence
+from collections.abc import Iterable
 
 from squad.security_findings import SecurityFinding
 
@@ -83,13 +83,36 @@ def to_csv(findings: Iterable[SecurityFinding]) -> str:
     """Render findings to CSV text."""
     buf = io.StringIO()
     w = csv.writer(buf)
-    w.writerow(["severity", "tool", "description", "file_or_endpoint",
-                "cwe", "owasp", "nist", "iso", "pci", "remediation"])
+    w.writerow(
+        [
+            "severity",
+            "tool",
+            "description",
+            "file_or_endpoint",
+            "cwe",
+            "owasp",
+            "nist",
+            "iso",
+            "pci",
+            "remediation",
+        ]
+    )
     for f in findings:
         c = map_controls(f.owasp_category)
-        w.writerow([f.severity.value, f.tool, f.description, f.file_or_endpoint,
-                    f.cwe, f.owasp_category, c["nist"], c["iso"], c["pci"],
-                    f.remediation])
+        w.writerow(
+            [
+                f.severity.value,
+                f.tool,
+                f.description,
+                f.file_or_endpoint,
+                f.cwe,
+                f.owasp_category,
+                c["nist"],
+                c["iso"],
+                c["pci"],
+                f.remediation,
+            ]
+        )
     return buf.getvalue()
 
 
@@ -98,14 +121,14 @@ def to_jira_json(findings: Iterable[SecurityFinding]) -> str:
     rows = []
     for f in findings:
         c = map_controls(f.owasp_category)
-        rows.append({
-            "summary": f"[{f.severity.value.upper()}] {f.description}",
-            "description": (f"Affected: {f.file_or_endpoint}\n\n"
-                            f"OWASP: {f.owasp_category}\nCWE: {f.cwe}\n"
-                            f"Remediation: {f.remediation}"),
-            "labels": [f.tool, f.owasp_category, f.severity.value],
-            "custom": c,
-        })
+        rows.append(
+            {
+                "summary": f"[{f.severity.value.upper()}] {f.description}",
+                "description": (f"Affected: {f.file_or_endpoint}\n\nOWASP: {f.owasp_category}\nCWE: {f.cwe}\nRemediation: {f.remediation}"),
+                "labels": [f.tool, f.owasp_category, f.severity.value],
+                "custom": c,
+            }
+        )
     return json.dumps(rows, indent=2)
 
 
@@ -114,7 +137,10 @@ def summary_controls(findings: Iterable[SecurityFinding]) -> dict:
     nist, iso, pci = set(), set(), set()
     for f in findings:
         c = map_controls(f.owasp_category)
-        if c["nist"]: nist.add(c["nist"])
-        if c["iso"]: iso.add(c["iso"])
-        if c["pci"]: pci.add(c["pci"])
+        if c["nist"]:
+            nist.add(c["nist"])
+        if c["iso"]:
+            iso.add(c["iso"])
+        if c["pci"]:
+            pci.add(c["pci"])
     return {"nist": sorted(nist), "iso": sorted(iso), "pci": sorted(pci)}

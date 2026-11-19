@@ -56,9 +56,8 @@ class WindowsAdapter(OSAdapter):
         """Level 3 (restricted token) is available on any Windows build once the
         per-user firewall-block marker is verified (works on Windows Home)."""
         from squad.exec.windows.restricted import level3_ready, restricted_marker_path
-        return level3_ready(restricted_marker_path(
-            os.environ.get("LOCALAPPDATA", os.path.expanduser(r"~\AppData\Local"))
-        ))
+
+        return level3_ready(restricted_marker_path(os.environ.get("LOCALAPPDATA", os.path.expanduser(r"~\AppData\Local"))))
 
     def _level1_ready(self) -> bool:
         """Level 1 is available only if the low-privilege user exists AND a
@@ -131,7 +130,14 @@ class WindowsAdapter(OSAdapter):
         Windows Home), 4 (WSL/Docker).
         """
         if isolation_level >= 1:
-            return self._run_isolated(cmd, cwd=cwd, env=env, timeout=timeout, level=isolation_level, password=low_priv_password)
+            return self._run_isolated(
+                cmd,
+                cwd=cwd,
+                env=env,
+                timeout=timeout,
+                level=isolation_level,
+                password=low_priv_password,
+            )
 
         return self._run_current(cmd, cwd=cwd, env=env, timeout=timeout)
 
@@ -190,14 +196,10 @@ class WindowsAdapter(OSAdapter):
         """
         if level == 1:
             if not self.supports_isolation(1):
-                raise RuntimeError(
-                    "Level 1 isolation not ready: low-privilege user missing or "
-                    "firewall-block marker not verified"
-                )
+                raise RuntimeError("Level 1 isolation not ready: low-privilege user missing or firewall-block marker not verified")
             if not password:
                 raise RuntimeError(
-                    "Level 1 launch needs the low-privilege user's password "
-                    "(set SQUAD_LOW_PRIV_PASSWORD or pass low_priv_password)"
+                    "Level 1 launch needs the low-privilege user's password (set SQUAD_LOW_PRIV_PASSWORD or pass low_priv_password)"
                 )
             return self._launch_as_user(cmd, cwd=cwd, env=env, timeout=timeout, password=password)
         if level == 2:
@@ -206,14 +208,10 @@ class WindowsAdapter(OSAdapter):
             return self._launch_sandbox(cmd, cwd=cwd, env=env, timeout=timeout)
         if level == 3:
             if not self.supports_isolation(3):
-                raise RuntimeError(
-                    "Level 3 isolation not ready: restricted-token marker missing or not verified"
-                )
+                raise RuntimeError("Level 3 isolation not ready: restricted-token marker missing or not verified")
             return self._launch_restricted(cmd, cwd=cwd, timeout=timeout)
         if level == 4:
-            raise NotImplementedError(
-                "Level 4 (WSL2/Docker) launch is experimental; configure a backend manually"
-            )
+            raise NotImplementedError("Level 4 (WSL2/Docker) launch is experimental; configure a backend manually")
         raise ValueError(f"unsupported isolation level: {level}")
 
     def _launch_as_user(
@@ -230,7 +228,6 @@ class WindowsAdapter(OSAdapter):
         Uses ctypes directly (no pywin32 per the spec). Builds a UTF-16
         environment block and joins an argument string for the logon call.
         """
-        import sys
 
         advapi32 = ctypes.windll.advapi32
         kernel32 = ctypes.windll.kernel32
@@ -248,7 +245,7 @@ class WindowsAdapter(OSAdapter):
 
         # Wide-char handles
         start_info = ctypes.create_string_buffer(104)  # PROCESS_INFORMATION
-        proc_info = ctypes.create_string_buffer(16)   # STARTUPINFOW
+        proc_info = ctypes.create_string_buffer(16)  # STARTUPINFOW
 
         creation_flags = CREATE_UNICODE_ENVIRONMENT
         domain_w = ctypes.create_unicode_buffer(domain)
@@ -276,8 +273,8 @@ class WindowsAdapter(OSAdapter):
             raise RuntimeError(f"CreateProcessWithLogonW failed (error {err})")
 
         # Read PIDs from PROCESS_INFORMATION
-        pid = int.from_bytes(proc_info[0:4], "little")
-        thread_id = int.from_bytes(proc_info[4:8], "little")
+        int.from_bytes(proc_info[0:4], "little")
+        int.from_bytes(proc_info[4:8], "little")
         proc_handle = int.from_bytes(proc_info[8:12], "little")
 
         # Wait for exit
@@ -312,7 +309,6 @@ class WindowsAdapter(OSAdapter):
         runs the command, and shuts the sandbox down.
         """
         import tempfile
-        import time
 
         sandbox = Path(r"C:\Windows\System32\WindowsSandbox.exe")
         if not sandbox.exists():
@@ -370,8 +366,7 @@ class WindowsAdapter(OSAdapter):
         """
         from squad.exec.windows.restricted import launch_restricted, plan_launch
 
-        plan = plan_launch(memory_limit_mb=512, max_processes=8,
-                           time_limit_seconds=int(timeout or 120))
+        plan = plan_launch(memory_limit_mb=512, max_processes=8, time_limit_seconds=int(timeout or 120))
         job, proc = launch_restricted(cmd, cwd=cwd or os.getcwd(), plan=plan)
         try:
             try:

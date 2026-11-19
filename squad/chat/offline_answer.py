@@ -9,10 +9,12 @@ Entries are matched by keyword against the user's question; the best (most
 keyword hits) match wins. Each answer is concise, security-first, and points
 to concrete ``squad`` commands where relevant.
 """
+
 from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+
 
 # A small, dense KB. ``keywords`` are lowercase substrings matched against the
 # lowercased question. ``answer`` is returned verbatim.

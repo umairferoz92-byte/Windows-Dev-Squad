@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-import pytest
+
 from squad.dev import DeveloperAssistant
 from squad.intel import RealTimeIntelEngine
 
@@ -37,14 +37,17 @@ def test_intel_fetch_updates(tmp_path):
 
 def test_developer_assistant_review(tmp_path):
     sample_file = tmp_path / "sample_code.py"
-    sample_file.write_text("""API_KEY = "1234567890"
+    sample_file.write_text(
+        """API_KEY = "1234567890"
 
 def calculate(x, y):
     try:
         eval("x + y")
     except:
         pass
-""", encoding="utf-8")
+""",
+        encoding="utf-8",
+    )
 
     assistant = DeveloperAssistant(cwd=str(tmp_path))
     res = assistant.review_code(str(sample_file))
@@ -56,9 +59,12 @@ def calculate(x, y):
 
 def test_developer_assistant_testgen(tmp_path):
     sample_file = tmp_path / "helpers.py"
-    sample_file.write_text("""def compute_total(price: float, tax: float) -> float:
+    sample_file.write_text(
+        """def compute_total(price: float, tax: float) -> float:
     return price * (1 + tax)
-""", encoding="utf-8")
+""",
+        encoding="utf-8",
+    )
 
     assistant = DeveloperAssistant(cwd=str(tmp_path))
     res = assistant.generate_tests(str(sample_file))
@@ -70,12 +76,15 @@ def test_developer_assistant_testgen(tmp_path):
 
 def test_developer_assistant_refactor(tmp_path):
     sample_file = tmp_path / "legacy.py"
-    sample_file.write_text("""def do_something():
+    sample_file.write_text(
+        """def do_something():
     try:
         x = 1
     except:
         pass
-""", encoding="utf-8")
+""",
+        encoding="utf-8",
+    )
 
     assistant = DeveloperAssistant(cwd=str(tmp_path))
     refactored = assistant.refactor_code(str(sample_file))

@@ -4,9 +4,7 @@ from squad.cli import doctor
 
 
 def test_redact_proxy_value_with_credentials():
-    assert doctor.redact_proxy_value("http://alice:hunter2@proxy.corp:8080") == (
-        "http://***@proxy.corp:8080"
-    )
+    assert doctor.redact_proxy_value("http://alice:hunter2@proxy.corp:8080") == ("http://***@proxy.corp:8080")
 
 
 def test_redact_proxy_value_without_credentials_unchanged():
@@ -85,9 +83,7 @@ def test_collect_isolation_has_all_levels():
         "machine": "AMD64",
         "edition": "Pro",
     }
-    levels = doctor.collect_isolation(
-        fake_runner, os_info, low_priv_user="squad-agent", marker_path=None
-    )
+    levels = doctor.collect_isolation(fake_runner, os_info, low_priv_user="squad-agent", marker_path=None)
     for level in ("0", "1", "2", "3", "4"):
         assert level in levels
         assert "name" in levels[level]

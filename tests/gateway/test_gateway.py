@@ -26,9 +26,7 @@ def test_csp_header_present():
 def test_login_then_status_ok():
     client = _client(login_check=lambda: True)
     token = client.post("/api/login").json()["token"]
-    assert (
-        client.get("/api/status", headers={"Authorization": f"Bearer {token}"}).status_code == 200
-    )
+    assert client.get("/api/status", headers={"Authorization": f"Bearer {token}"}).status_code == 200
 
 
 def test_login_rejected():
@@ -53,9 +51,7 @@ def test_install_not_approvable_from_web():
     client = _client(login_check=lambda: True, approvable_actions=("some_benign",))
     token = client.post("/api/login").json()["token"]
     headers = {"Authorization": f"Bearer {token}", "X-CSRF-Token": "csrf"}
-    resp = client.post(
-        "/api/approve", json={"action": "install_dependencies", "approval_id": "x"}, headers=headers
-    )
+    resp = client.post("/api/approve", json={"action": "install_dependencies", "approval_id": "x"}, headers=headers)
     assert resp.status_code == 403
 
 
@@ -63,9 +59,7 @@ def test_approve_allowlisted_action():
     client = _client(login_check=lambda: True, approvable_actions=("some_benign",))
     token = client.post("/api/login").json()["token"]
     headers = {"Authorization": f"Bearer {token}", "X-CSRF-Token": "csrf"}
-    resp = client.post(
-        "/api/approve", json={"action": "some_benign", "approval_id": "x"}, headers=headers
-    )
+    resp = client.post("/api/approve", json={"action": "some_benign", "approval_id": "x"}, headers=headers)
     assert resp.status_code == 200
     assert resp.json()["approved"] is True
 

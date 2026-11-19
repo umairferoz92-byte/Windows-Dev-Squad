@@ -5,16 +5,14 @@ missing, ``available`` is False and routing returns None (never raises). This
 keeps the chatbot fully functional in offline installs while still unlocking
 ML-based routing when the models exist.
 """
+
 import sys
 from pathlib import Path
-
-import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from squad.chat import classifier as clfmod
-from squad.chat.classifier import _extract_arg, _LABEL_CMD
-from squad.chat import _extract_snippet
+from squad.chat.classifier import _LABEL_CMD, _extract_arg
 
 
 def test_bridge_never_raises_on_missing_models(monkeypatch):
@@ -31,6 +29,7 @@ def test_bridge_never_raises_on_missing_models(monkeypatch):
 def test_bridge_degradation_when_tf_missing(monkeypatch):
     def boom(which):
         raise ImportError("tensorflow not installed")
+
     monkeypatch.setattr(clfmod, "_load", boom)
     b = clfmod.ClassifierBridge()
     assert b.available is False
@@ -78,8 +77,9 @@ def test_security_verdict_none_on_empty():
 
 def test_code_security_routes_through_handle(monkeypatch):
     import squad.chat as chatmod
-    from squad.chat import offline
     import squad.chat.classifier as clf
+    from squad.chat import offline
+
     calls = {}
 
     def fake_verdict(code):
@@ -96,6 +96,7 @@ def test_code_security_routes_through_handle(monkeypatch):
 
 def test_extract_snippet_after_separator():
     from squad.chat.__init__ import _extract_snippet
+
     assert _extract_snippet("check code: eval(x)") == "eval(x)"
     assert _extract_snippet("is this snippet safe: cur.execute(u)") == "cur.execute(u)"
 

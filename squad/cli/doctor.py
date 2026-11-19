@@ -241,9 +241,7 @@ def _detect_windows_level1(runner: Runner, low_priv_user: str, marker_path: str)
         # non-zero even with -ErrorAction SilentlyContinue, so use a try/catch
         # probe that always exits 0 and prints a deterministic FOUND/MISSING.
         script = (
-            "try { Get-LocalUser -Name '"
-            + low_priv_user
-            + "' -ErrorAction Stop | Out-Null; Write-Output 'FOUND' } "
+            "try { Get-LocalUser -Name '" + low_priv_user + "' -ErrorAction Stop | Out-Null; Write-Output 'FOUND' } "
             "catch { Write-Output 'MISSING' }"
         )
         result = _run_powershell(runner, script)
@@ -260,9 +258,7 @@ def _detect_windows_level1(runner: Runner, low_priv_user: str, marker_path: str)
     marker = _read_marker(marker_path)
     available = level1_available(user_exists, marker)
     firewall_detail = (
-        "firewall block marker present and verified"
-        if marker and marker.get("verified") is True
-        else "firewall block NOT verified"
+        "firewall block marker present and verified" if marker and marker.get("verified") is True else "firewall block NOT verified"
     )
     return {
         "name": "low-privilege user (Level 1)",
@@ -292,8 +288,7 @@ def _detect_windows_sandbox(runner: Runner, os_info: dict) -> dict:
     detail_parts = [
         "edition " + ("supported" if edition_ok else "unsupported (Windows Home lacks Sandbox)"),
         "WindowsSandbox.exe " + ("present" if exe_ok else "missing"),
-        "hypervisor "
-        + ("present" if hypervisor is True else "absent" if hypervisor is False else "unknown"),
+        "hypervisor " + ("present" if hypervisor is True else "absent" if hypervisor is False else "unknown"),
     ]
     return {
         "name": "Windows Sandbox (Level 2)",
@@ -437,9 +432,7 @@ def render_report(facts: dict, console: Console) -> None:
     env_table.add_row("Python", f"{python['version']} ({python['implementation']})")
     env_table.add_row("Python executable", escape(python["executable"]))
     env_table.add_row("git", escape(git["version"]) if git["installed"] else "[red]not found[/red]")
-    env_table.add_row(
-        "PowerShell language mode", escape(facts.get("powershell_language_mode") or "n/a")
-    )
+    env_table.add_row("PowerShell language mode", escape(facts.get("powershell_language_mode") or "n/a"))
     console.print(env_table)
 
     tools_table = Table(title="Installed tools", show_header=True, box=box.SIMPLE)
@@ -450,9 +443,7 @@ def render_report(facts: dict, console: Console) -> None:
         tools_table.add_row(label, _yes(tool["importable"]), _yes(tool["on_path"]))
     console.print(tools_table)
 
-    proxy_table = Table(
-        title="Proxy variables (secrets redacted)", show_header=True, box=box.SIMPLE
-    )
+    proxy_table = Table(title="Proxy variables (secrets redacted)", show_header=True, box=box.SIMPLE)
     proxy_table.add_column("Variable")
     proxy_table.add_column("Status")
     proxy_table.add_column("Value")
@@ -481,9 +472,7 @@ def render_report(facts: dict, console: Console) -> None:
 
 
 def doctor_command(
-    setup_help: bool = typer.Option(
-        False, "--setup-help", help="Print one-time administrator setup steps and exit."
-    ),
+    setup_help: bool = typer.Option(False, "--setup-help", help="Print one-time administrator setup steps and exit."),
     low_priv_user: str = typer.Option(
         DEFAULT_LOW_PRIV_USER,
         "--low-priv-user",

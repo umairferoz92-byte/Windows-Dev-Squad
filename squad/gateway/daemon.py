@@ -3,6 +3,7 @@
 Manages a persistent pidfile under the squad data dir so the ``remote``
 subcommands can start, stop cached, and revoke the gateway across processes.
 """
+
 from __future__ import annotations
 
 import os

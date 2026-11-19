@@ -103,9 +103,7 @@ def create_app(
     @app.post("/api/webauthn/register")
     def webauthn_register(request: Request, body: dict):
         """Verify a WebAuthn registration response and store the credential."""
-        if not verify_origin_and_host(
-            request.headers.get("origin") or "", (request.headers.get("host") or "").split(":")[0]
-        ):
+        if not verify_origin_and_host(request.headers.get("origin") or "", (request.headers.get("host") or "").split(":")[0]):
             raise HTTPException(403, "bad origin or host")
         if not verify_registration(wa, body):
             raise HTTPException(400, "registration failed")
@@ -164,9 +162,7 @@ def create_app(
         require_auth(authorization)
         require_csrf(x_csrf_token)
         if body.action not in approvable_actions:
-            raise HTTPException(
-                403, f"action '{escape_html(body.action)}' is not approvable from the web page"
-            )
+            raise HTTPException(403, f"action '{escape_html(body.action)}' is not approvable from the web page")
         return {"approved": controller.approve(body.approval_id)}
 
     @app.post("/api/stop")

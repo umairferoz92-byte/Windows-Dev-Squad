@@ -104,9 +104,7 @@ def assemble_crew(size: int, names=None, max_agents: int = HARD_MAX_AGENTS) -> l
     return specs
 
 
-def estimate_run_cost(
-    crew: list[AgentSpec], prices, model: str, plan_tokens: int = 2000, code_tokens: int = 8000
-) -> float | None:
+def estimate_run_cost(crew: list[AgentSpec], prices, model: str, plan_tokens: int = 2000, code_tokens: int = 8000) -> float | None:
     """Rough dry-run cost estimate (an estimate, not a quote)."""
     price = prices.price_for(model)
     if price is None:

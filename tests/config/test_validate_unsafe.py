@@ -1,6 +1,6 @@
 """Feature 6: config validation refuses unsafe settings (R1-R4)."""
-from squad.config.validate import validate_unsafe_settings
 
+from squad.config.validate import validate_unsafe_settings
 
 PRICES = {
     "as_of": "2026-01-01",

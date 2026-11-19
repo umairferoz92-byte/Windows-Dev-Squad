@@ -9,18 +9,19 @@ Both models are loaded lazily and every call is optional: if TensorFlow or the
 artifacts are missing, these helpers degrade to ``None`` / the raw text so the
 chatbot keeps working in fully-offline installs.
 """
+
 from __future__ import annotations
 
 import re
-from typing import Optional
 
 
 def _load(which: str):
     """Lazily import + instantiate a model; return None on any failure."""
     try:
+        from pathlib import Path
+
         from squad.models import infer
         from squad.models.train import ARTIFACTS
-        from pathlib import Path
 
         d = Path(ARTIFACTS) / which
         if not (d / "model.keras").exists():
@@ -32,7 +33,7 @@ def _load(which: str):
 
 # intent-classifier label -> squad subcommand template.
 # ``{arg}`` is filled from the user's message; None => no arg needed.
-_LABEL_CMD: dict[str, Optional[list[str]]] = {
+_LABEL_CMD: dict[str, list[str] | None] = {
     "review": ["dev", "review", "{arg}"],
     "testgen": ["dev", "testgen", "{arg}"],
     "refactor": ["dev", "refactor", "{arg}"],
@@ -57,7 +58,7 @@ _PATHY = re.compile(
 )
 
 
-def _extract_arg(text: str, label: str) -> Optional[str]:
+def _extract_arg(text: str, label: str) -> str | None:
     if label not in _NEEDS_ARG:
         return None
     # Scan every bare token; return the first one that looks like a real target.
@@ -103,7 +104,7 @@ class ClassifierBridge:
         except Exception:
             return None, 0.0
 
-    def security(self, code: str) -> Optional[tuple[float, str]]:
+    def security(self, code: str) -> tuple[float, str] | None:
         """Return (probability, verdict) for a code snippet, or None."""
         self._ensure()
         if self._security is None:
@@ -142,7 +143,7 @@ def looks_like_code_check(text: str) -> bool:
     return bool(_SECURITY_ASK.search(text))
 
 
-def security_verdict(code: str) -> Optional[tuple[float, str]]:
+def security_verdict(code: str) -> tuple[float, str] | None:
     """Run the code-security classifier on a snippet.
 
     Returns (probability, verdict) where verdict is 'vulnerable' or

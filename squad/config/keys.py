@@ -8,6 +8,7 @@ supported but any provider may supply its own key name (e.g. FREEllmAPI_KEY,
 OPENAI_KEY). Loading never crashes if the Credential Manager is unavailable
 (non-Windows, missing library): it simply returns silently.
 """
+
 from __future__ import annotations
 
 import ctypes
@@ -102,10 +103,7 @@ def _configure_advapi32(advapi32) -> None:
     gracefully — the enumeration/read calls still work because the fake returns
     the correct values directly.
     """
-    if not all(
-        hasattr(getattr(advapi32, name, None), "restype")
-        for name in ("CredEnumerateW", "CredReadW", "CredFree")
-    ):
+    if not all(hasattr(getattr(advapi32, name, None), "restype") for name in ("CredEnumerateW", "CredReadW", "CredFree")):
         return
     advapi32.CredEnumerateW.restype = wintypes.BOOL
     advapi32.CredEnumerateW.argtypes = [

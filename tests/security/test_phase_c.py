@@ -11,22 +11,25 @@ from __future__ import annotations
 import subprocess
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
 from squad import security_authorized as sec
 from squad.agent.nightwing import Nightwing
-from squad.agent.rate_limit import GLOBAL_KILL_SWITCH, GLOBAL_RATE_LIMITER, KillSwitch, RateLimiter
+from squad.agent.rate_limit import KillSwitch, RateLimiter
 
 
 @pytest.fixture
 def authorized_loopback(tmp_path):
     old = sec.AUTHORIZED_PATH
     sec.AUTHORIZED_PATH = str(tmp_path / "authorized.yaml")
-    added_at = datetime.now(timezone.utc).isoformat()
-    rec = {"target": "http://127.0.0.1:9999",
-           "ownership_statement": "I own this", "added_at": added_at}
+    added_at = datetime.now(UTC).isoformat()
+    rec = {
+        "target": "http://127.0.0.1:9999",
+        "ownership_statement": "I own this",
+        "added_at": added_at,
+    }
     rec["sha256"] = sec._sha256_of(rec)
     sec._append_authorized(rec)
     yield "http://127.0.0.1:9999"
@@ -52,7 +55,8 @@ def test_kill_switch_terminates_children():
     # Spawn a long-running child (sleep 60) and register it
     proc = subprocess.Popen(
         [sys.executable, "-c", "import time; time.sleep(60)"],
-        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
     )
     ks.register(run_id, proc)
 

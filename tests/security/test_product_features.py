@@ -5,16 +5,12 @@ notifications, doctor, config, and the extended manifest checksum.
 from __future__ import annotations
 
 import os
-import sys
-import tempfile
-
-import pytest
 
 from squad.compliance import map_controls, summary_controls, to_csv, to_jira_json
 from squad.config.squadcfg import load_config
 from squad.roles import can, export_audit, set_role, verify_audit_export
 from squad.security_findings import SecurityFinding, SecuritySeverity
-from squad.store.history import ScanStore, store_for_testing
+from squad.store.history import store_for_testing
 from squad.tools.manifest import ToolManifestEntry, sha256_file, verify_checksum
 
 
@@ -36,11 +32,15 @@ def test_store_new_run_and_findings(tmp_path):
 
 def test_store_redacts_evidence_at_rest(tmp_path):
     # F1 regression: secrets in evidence_snippet must not survive in the DB.
-    from squad.store.history import ScanStore
     store = store_for_testing(tmp_path)
     run = store.new_run("http://t", "ab")
-    leaky = SecurityFinding("gitleaks", SecuritySeverity.HIGH, "hardcoded secret",
-                            "http://x", evidence_snippet="AKIAIOSFODNN7EXAMPLE ghp_0123456789abcdefghij ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGH")
+    leaky = SecurityFinding(
+        "gitleaks",
+        SecuritySeverity.HIGH,
+        "hardcoded secret",
+        "http://x",
+        evidence_snippet="AKIAIOSFODNN7EXAMPLE ghp_0123456789abcdefghij ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGH",
+    )
     store.add_findings(run, [leaky])
     stored = store.run_findings(run)[0]
     assert "[REDACTED]" in stored["evidence_snippet"]
@@ -51,11 +51,21 @@ def test_store_redacts_evidence_at_rest(tmp_path):
 def test_store_diff(tmp_path):
     store = store_for_testing(tmp_path)
     a = store.new_run("http://t", "ab")
-    store.add_findings(a, [_finding(SecuritySeverity.HIGH, "old-issue", "http://x/old"),
-                           _finding(SecuritySeverity.MEDIUM, "keep", "http://x/keep")])
+    store.add_findings(
+        a,
+        [
+            _finding(SecuritySeverity.HIGH, "old-issue", "http://x/old"),
+            _finding(SecuritySeverity.MEDIUM, "keep", "http://x/keep"),
+        ],
+    )
     b = store.new_run("http://t", "ab")
-    store.add_findings(b, [_finding(SecuritySeverity.MEDIUM, "keep", "http://x/keep"),
-                           _finding(SecuritySeverity.HIGH, "new-issue", "http://x/new")])
+    store.add_findings(
+        b,
+        [
+            _finding(SecuritySeverity.MEDIUM, "keep", "http://x/keep"),
+            _finding(SecuritySeverity.HIGH, "new-issue", "http://x/new"),
+        ],
+    )
     d = store.diff(a, b)
     assert any("new-issue" in str(x) for x in d["new"])
     assert any("old-issue" in str(x) for x in d["fixed"])
@@ -64,8 +74,13 @@ def test_store_diff(tmp_path):
 def test_store_gate(tmp_path):
     store = store_for_testing(tmp_path)
     run = store.new_run("http://t", "ab")
-    store.add_findings(run, [_finding(SecuritySeverity.CRITICAL, "bad", "http://x"),
-                             _finding(SecuritySeverity.LOW, "ok", "http://y")])
+    store.add_findings(
+        run,
+        [
+            _finding(SecuritySeverity.CRITICAL, "bad", "http://x"),
+            _finding(SecuritySeverity.LOW, "ok", "http://y"),
+        ],
+    )
     passed, blockers = store.gate(run, fail_on="high")
     assert passed is False
     assert len(blockers) == 1
@@ -90,8 +105,10 @@ def test_map_controls():
 
 
 def test_summary_controls_aggregates():
-    fs = [_finding(SecuritySeverity.HIGH, owasp="A03:2021-Injection"),
-          _finding(SecuritySeverity.LOW, owasp="A05:2021-Security Misconfiguration")]
+    fs = [
+        _finding(SecuritySeverity.HIGH, owasp="A03:2021-Injection"),
+        _finding(SecuritySeverity.LOW, owasp="A05:2021-Security Misconfiguration"),
+    ]
     s = summary_controls(fs)
     assert "SI-10 Information Input Validation" in s["nist"]
     assert len(s["nist"]) == 2
@@ -163,8 +180,7 @@ def test_load_config_parses_toml(tmp_path):
 def test_verify_checksum_matches(tmp_path):
     f = tmp_path / "tool.bin"
     f.write_bytes(b"hello binary")
-    entry = ToolManifestEntry(name="x", display="X", purpose="p", binary="x",
-                              install_cmd="", sha256=sha256_file(str(f)))
+    entry = ToolManifestEntry(name="x", display="X", purpose="p", binary="x", install_cmd="", sha256=sha256_file(str(f)))
     ok, detail = verify_checksum(entry, str(f))
     assert ok is True
     assert "verified" in detail
@@ -173,8 +189,7 @@ def test_verify_checksum_matches(tmp_path):
 def test_verify_checksum_mismatch(tmp_path):
     f = tmp_path / "tool.bin"
     f.write_bytes(b"hello binary")
-    entry = ToolManifestEntry(name="x", display="X", purpose="p", binary="x",
-                              install_cmd="", sha256="0" * 64)
+    entry = ToolManifestEntry(name="x", display="X", purpose="p", binary="x", install_cmd="", sha256="0" * 64)
     ok, detail = verify_checksum(entry, str(f))
     assert ok is False
 

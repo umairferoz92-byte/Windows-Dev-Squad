@@ -36,9 +36,7 @@ def validate_config(repo_config: dict, guard_config: dict, prices: dict | None =
     if int(crew.get("size", 5)) > HARD_MAX_AGENTS:
         issues.append(f"crew.size ({crew.get('size')}) exceeds max_agents {HARD_MAX_AGENTS}")
     if int(crew.get("max_agents", HARD_MAX_AGENTS)) > HARD_MAX_AGENTS:
-        issues.append(
-            f"crew.max_agents ({crew.get('max_agents')}) exceeds the hard cap {HARD_MAX_AGENTS}"
-        )
+        issues.append(f"crew.max_agents ({crew.get('max_agents')}) exceeds the hard cap {HARD_MAX_AGENTS}")
 
     budget = repo_config.get("budget") or {}
     if budget.get("mode", "balanced") not in BUDGET_MODES:
@@ -90,24 +88,35 @@ def validate_unsafe_settings(repo_config: dict, prices: dict | None = None) -> l
         level = iso["level"]
         minimum = iso["minimum_for_trusted"]
         if isinstance(level, int) and isinstance(minimum, int) and level < minimum:
-            _add_refusal(issues, f"isolation.level ({level}) is below the repo's "
-                                 f"required level ({minimum})",
-                         "isolation.level", "raise isolation.level to >= minimum_for_trusted")
+            _add_refusal(
+                issues,
+                f"isolation.level ({level}) is below the repo's required level ({minimum})",
+                "isolation.level",
+                "raise isolation.level to >= minimum_for_trusted",
+            )
 
     budget = repo_config.get("budget") or {}
     per_provider = (budget.get("per_provider") or {}) if isinstance(budget.get("per_provider"), dict) else {}
     for prov in (repo_config.get("providers") or {}).get("allowed_providers", []):
         has_ceiling = prov in per_provider or budget.get("per_task") or budget.get("per_day")
         if not has_ceiling:
-            _add_refusal(issues, f"provider '{prov}' is allowed but has no budget ceiling",
-                         f"budget.per_provider.{prov}", "add a per_provider cap for the provider")
+            _add_refusal(
+                issues,
+                f"provider '{prov}' is allowed but has no budget ceiling",
+                f"budget.per_provider.{prov}",
+                "add a per_provider cap for the provider",
+            )
 
     remote = repo_config.get("remote") or {}
     if remote.get("enabled") is True:
         host = remote.get("host", "127.0.0.1")
         if not remote.get("https") and host not in REMOTE_HOSTS_OK:
-            _add_refusal(issues, "remote access is enabled without HTTPS on a non-loopback host",
-                         "remote.host / remote.https", "bind to 127.0.0.1/localhost or enable https")
+            _add_refusal(
+                issues,
+                "remote access is enabled without HTTPS on a non-loopback host",
+                "remote.host / remote.https",
+                "bind to 127.0.0.1/localhost or enable https",
+            )
 
     if prices is not None:
         models_cfg = repo_config.get("models") or {}
@@ -120,6 +129,10 @@ def validate_unsafe_settings(repo_config: dict, prices: dict | None = None) -> l
                 continue
             for m in models:
                 if isinstance(m, str) and known and m not in known:
-                    _add_refusal(issues, f"model '{m}' ({role}) is not on the allowlist",
-                                 f"models.{role}", "add the model to prices.yaml allowlist")
+                    _add_refusal(
+                        issues,
+                        f"model '{m}' ({role}) is not on the allowlist",
+                        f"models.{role}",
+                        "add the model to prices.yaml allowlist",
+                    )
     return issues

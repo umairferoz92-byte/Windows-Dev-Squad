@@ -8,9 +8,8 @@ notification channel, and scan defaults. Missing file -> sensible defaults.
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 
 def default_config_path() -> str:
@@ -30,9 +29,9 @@ def default_config_path() -> str:
 @dataclass
 class SquadConfig:
     # Scan defaults
-    rate_limit_rps: float = 2.0          # global requests/sec cap
-    fail_on: str = "high"                # gate threshold
-    default_phases: str = "ab"           # phases run when none given
+    rate_limit_rps: float = 2.0  # global requests/sec cap
+    fail_on: str = "high"  # gate threshold
+    default_phases: str = "ab"  # phases run when none given
     ignore_statuses: tuple = ("accepted", "verified", "fixed")
 
     # Tool toggles (False disables a tool even if installed)
@@ -46,11 +45,11 @@ class SquadConfig:
     use_testssl: bool = True
 
     # Notifications
-    notify_channel: str = "console"      # console | desktop
+    notify_channel: str = "console"  # console | desktop
     notify_on_complete: bool = True
 
     # Data
-    data_dir: str = ""                   # override for DB/authorized store
+    data_dir: str = ""  # override for DB/authorized store
 
     _path: str = ""
 
@@ -65,7 +64,7 @@ def _as_bool(v) -> bool:
     return str(v).strip().lower() in ("1", "true", "yes", "on")
 
 
-def load_config(path: Optional[str] = None) -> SquadConfig:
+def load_config(path: str | None = None) -> SquadConfig:
     """Load squad.toml, falling back to defaults when absent/unparseable."""
     cfg = SquadConfig()
     p = path or default_config_path()

@@ -22,12 +22,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-import subprocess
-import sys
-import uuid
-from datetime import datetime, timezone
-from pathlib import Path
-from typing import Optional
+from datetime import UTC, datetime
 
 import yaml
 
@@ -71,7 +66,7 @@ def _load_authorized() -> list[dict]:
     if not os.path.exists(AUTHORIZED_PATH):
         return []
     try:
-        with open(AUTHORIZED_PATH, "r", encoding="utf-8") as f:
+        with open(AUTHORIZED_PATH, encoding="utf-8") as f:
             data = yaml.safe_load(f) or []
         if isinstance(data, dict):
             data = [data]
@@ -80,7 +75,7 @@ def _load_authorized() -> list[dict]:
         # whose hash does not verify is treated as tampered and dropped, so a
         # tampered authorized_targets.yaml is refused (fail closed).
         valid = []
-        for entry in (data if isinstance(data, list) else []):
+        for entry in data if isinstance(data, list) else []:
             if not isinstance(entry, dict):
                 continue
             if not ({"target", "ownership_statement", "added_at", "sha256"} <= set(entry)):
@@ -108,8 +103,12 @@ def _append_authorized(record: dict) -> None:
         yaml.dump(entries, f, default_flow_style=False, sort_keys=True)
 
     # Append to hash-chained audit log
-    _audit_append("authorized_targets.add", target=record["target"],
-                  ownership=record["ownership_statement"], sha256=record["sha256"])
+    _audit_append(
+        "authorized_targets.add",
+        target=record["target"],
+        ownership=record["ownership_statement"],
+        sha256=record["sha256"],
+    )
 
 
 def _audit_append(event: str, **fields) -> None:
@@ -126,6 +125,7 @@ def _audit_append(event: str, **fields) -> None:
     # AuditLog.append chains against its own previous entry automatically.
     log.append(event, **fields)
 
+
 # ---------------------------------------------------------------------------
 # is_authorized(target)
 # -------------------------------------------------------------------------
@@ -134,6 +134,7 @@ def _audit_append(event: str, **fields) -> None:
 def _resolve_host(target: str) -> str:
     """Resolve a hostname to its IP address. Returns the IP string, or the original target if resolution fails."""
     import socket
+
     try:
         addr = socket.gethostbyname(target)
         return addr
@@ -180,11 +181,26 @@ def is_authorized(target: str) -> bool:
                 return True
 
         # RFC 1918 private-range check:
-        private_prefixes = ("10.", "172.16.", "172.17.", "172.18.",
-                          "172.19.", "172.20.", "172.21.", "172.22.",
-                          "172.23.", "172.24.", "172.25.", "172.26.",
-                          "172.27.", "172.28.", "172.29.", "172.30.",
-                          "172.31.", "192.168.")
+        private_prefixes = (
+            "10.",
+            "172.16.",
+            "172.17.",
+            "172.18.",
+            "172.19.",
+            "172.20.",
+            "172.21.",
+            "172.22.",
+            "172.23.",
+            "172.24.",
+            "172.25.",
+            "172.26.",
+            "172.27.",
+            "172.28.",
+            "172.29.",
+            "172.30.",
+            "172.31.",
+            "192.168.",
+        )
         is_auth_private = any(auth_target.startswith(p) for p in private_prefixes)
         is_req_private = any(resolved_ip.startswith(p) for p in private_prefixes) if resolved_ip else False
 
@@ -197,8 +213,7 @@ def is_authorized(target: str) -> bool:
             return True
 
     # Not authorized — log the refusal
-    _audit_append("is_authorized.refuse", target=target,
-                  reason="target not in authorized list")
+    _audit_append("is_authorized.refuse", target=target, reason="target not in authorized list")
     return False
 
 
@@ -224,9 +239,7 @@ def cmd_security_add_target() -> None:
     6. Confirm to the user.
     """
     # Step 1: ownership statement
-    ownership = _prompt_user(
-        "Ownership statement (e.g. \"I own and am authorized to test this system\"): "
-    )
+    ownership = _prompt_user('Ownership statement (e.g. "I own and am authorized to test this system"): ')
     if not ownership:
         print("[refused] ownership statement cannot be empty.")
         return
@@ -245,7 +258,7 @@ def cmd_security_add_target() -> None:
 
     # Step 4: compute sha256 over the canonical serialization of the record
     # fields (same function _load_authorized uses to verify, so round-trips).
-    added_at = datetime.now(timezone.utc).isoformat()
+    added_at = datetime.now(UTC).isoformat()
     record = {
         "target": target,
         "ownership_statement": ownership,

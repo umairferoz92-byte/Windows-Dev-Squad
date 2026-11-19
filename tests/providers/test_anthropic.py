@@ -1,4 +1,5 @@
 """Tests for the Anthropic (Claude) provider (fully mocked, offline)."""
+
 from __future__ import annotations
 
 import httpx
@@ -11,9 +12,7 @@ MODEL = "claude-sonnet-4-20250514"
 
 
 def _provider(handler, allowed=(MODEL,)):
-    client = httpx.Client(
-        base_url="https://api.anthropic.com/v1", transport=httpx.MockTransport(handler)
-    )
+    client = httpx.Client(base_url="https://api.anthropic.com/v1", transport=httpx.MockTransport(handler))
     return AnthropicProvider("sk-ant-test", allowed, client=client)
 
 

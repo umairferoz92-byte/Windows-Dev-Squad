@@ -3,9 +3,8 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field
-from enum import Enum
-from typing import Optional
+from dataclasses import dataclass
+from enum import StrEnum
 
 # ---------------------------------------------------------------------------
 # Evidence redaction. Lives here (leaf module) so the report writer, the
@@ -44,7 +43,7 @@ def redact_evidence(text: str) -> str:
     return out
 
 
-class SecuritySeverity(str, Enum):
+class SecuritySeverity(StrEnum):
     CRITICAL = "critical"
     HIGH = "high"
     MEDIUM = "medium"

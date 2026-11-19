@@ -9,17 +9,13 @@ from __future__ import annotations
 import json
 import os
 import time
-import urllib.request
 import urllib.error
-from dataclasses import dataclass, asdict
+import urllib.request
+from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
-INTEL_CACHE_PATH = os.path.join(
-    os.environ.get("LOCALAPPDATA", os.path.expanduser("~")),
-    "squad",
-    "intel_cache.json"
-)
+INTEL_CACHE_PATH = os.path.join(os.environ.get("LOCALAPPDATA", os.path.expanduser("~")), "squad", "intel_cache.json")
 
 # Default fallback offline knowledge base if network is unavailable
 DEFAULT_SECURITY_ADVISORIES = [
@@ -30,7 +26,7 @@ DEFAULT_SECURITY_ADVISORIES = [
         "cwe": "CWE-89",
         "summary": "Avoid shell=True in subprocess calls and raw string concatenation in SQL queries.",
         "recommendation": "Use parameterized queries and list-based subprocess execution.",
-        "updated_at": "2026-03-01T00:00:00Z"
+        "updated_at": "2026-03-01T00:00:00Z",
     },
     {
         "id": "CVE-2024-SEC-02",
@@ -39,7 +35,7 @@ DEFAULT_SECURITY_ADVISORIES = [
         "cwe": "CWE-502",
         "summary": "Use of eval(), exec(), or pickle.loads on untrusted input allows RCE.",
         "recommendation": "Use ast.literal_eval or json.loads for serialization.",
-        "updated_at": "2026-03-01T00:00:00Z"
+        "updated_at": "2026-03-01T00:00:00Z",
     },
     {
         "id": "GHSA-2026-REV-01",
@@ -48,8 +44,8 @@ DEFAULT_SECURITY_ADVISORIES = [
         "cwe": "CWE-798",
         "summary": "Hardcoded tokens, bearer keys, and AWS credentials committed to git repos.",
         "recommendation": "Use environment variables or secrets manager with gitleaks scanning.",
-        "updated_at": "2026-03-01T00:00:00Z"
-    }
+        "updated_at": "2026-03-01T00:00:00Z",
+    },
 ]
 
 DEFAULT_CODING_BEST_PRACTICES = [
@@ -76,7 +72,7 @@ DEFAULT_CODING_BEST_PRACTICES = [
         "language": "all",
         "summary": "Write deterministic unit tests with clear assertions, mocking network/disk calls.",
         "example": "def test_feature(tmp_path): ... assert result.ok",
-    }
+    },
 ]
 
 
@@ -124,9 +120,7 @@ class RealTimeIntelEngine:
 
     def save_cache(self) -> None:
         try:
-            self.cache_file.write_text(
-                json.dumps(self.intel.to_dict(), indent=2), encoding="utf-8"
-            )
+            self.cache_file.write_text(json.dumps(self.intel.to_dict(), indent=2), encoding="utf-8")
         except OSError:
             pass
 
@@ -138,23 +132,22 @@ class RealTimeIntelEngine:
         # 1. Fetch GitHub Advisory Security Feed (Open API endpoint)
         gh_url = "https://api.github.com/advisories?per_page=5"
         try:
-            req = urllib.request.Request(
-                gh_url,
-                headers={"User-Agent": "WindowsDevSquad-Intel/0.2.0"}
-            )
+            req = urllib.request.Request(gh_url, headers={"User-Agent": "WindowsDevSquad-Intel/0.2.0"})
             with urllib.request.urlopen(req, timeout=timeout) as resp:
                 if resp.status == 200:
                     items = json.loads(resp.read().decode("utf-8"))
                     for item in items:
-                        new_advisories.append({
-                            "id": item.get("ghsa_id", item.get("cve_id", "GHSA-LIVE")),
-                            "title": item.get("summary", "Security Advisory"),
-                            "severity": item.get("severity", "HIGH").upper(),
-                            "cwe": item.get("cwe_ids", ["CWE-UNKNOWN"])[0] if item.get("cwe_ids") else "CWE-UNKNOWN",
-                            "summary": item.get("description", "")[:200] + "...",
-                            "recommendation": "Review advisory details & upgrade dependencies.",
-                            "updated_at": item.get("published_at", "")
-                        })
+                        new_advisories.append(
+                            {
+                                "id": item.get("ghsa_id", item.get("cve_id", "GHSA-LIVE")),
+                                "title": item.get("summary", "Security Advisory"),
+                                "severity": item.get("severity", "HIGH").upper(),
+                                "cwe": item.get("cwe_ids", ["CWE-UNKNOWN"])[0] if item.get("cwe_ids") else "CWE-UNKNOWN",
+                                "summary": item.get("description", "")[:200] + "...",
+                                "recommendation": "Review advisory details & upgrade dependencies.",
+                                "updated_at": item.get("published_at", ""),
+                            }
+                        )
                     sources_contacted.append("github-advisories-api")
         except Exception:
             # Fallback if offline / rate limited
@@ -186,15 +179,11 @@ class RealTimeIntelEngine:
         q = query.lower()
         results = []
         for adv in self.intel.security_advisories:
-            if (q in adv.get("title", "").lower() or
-                q in adv.get("summary", "").lower() or
-                q in adv.get("cwe", "").lower()):
+            if q in adv.get("title", "").lower() or q in adv.get("summary", "").lower() or q in adv.get("cwe", "").lower():
                 results.append({"type": "security_advisory", "data": adv})
 
         for prac in self.intel.coding_practices:
-            if (q in prac.get("topic", "").lower() or
-                q in prac.get("summary", "").lower() or
-                q in prac.get("language", "").lower()):
+            if q in prac.get("topic", "").lower() or q in prac.get("summary", "").lower() or q in prac.get("language", "").lower():
                 results.append({"type": "coding_practice", "data": prac})
 
         return results

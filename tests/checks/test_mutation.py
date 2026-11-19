@@ -1,5 +1,4 @@
 """Mutation testing gate (Feature 3)."""
-from pathlib import Path
 
 from squad.checks.mutation import MutationGate, MutationReport, _mutate_source, gate_passes
 

@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
+from squad.providers import factory
 from squad.providers.base import ChatResponse, Provider, ProviderError, Usage
 from squad.providers.models import all_allowed_models, role_allowed_models
 from squad.providers.openrouter import OpenRouterProvider
 from squad.providers.registry import get_provider
-from squad.providers import factory
 
 __all__ = [
     "ChatResponse",

@@ -27,8 +27,7 @@ def _run(approver=True, curr=None, findings=None, changed=None, cost=None, not_c
         approver=_Approver(approver),
         coder_runner=lambda t: AgentResult(True, 1, "ok", []),
         prev_metrics={"tests_passed": 1, "tests_skipped": 0, "coverage": 0.0, "exit_code": 1},
-        curr_metrics=curr
-        or {"tests_passed": 1, "tests_skipped": 0, "coverage": 0.0, "exit_code": 0},
+        curr_metrics=curr or {"tests_passed": 1, "tests_skipped": 0, "coverage": 0.0, "exit_code": 0},
         findings=findings or [],
         changed_files=changed or ["src/main.py", "squad.yaml"],
         cost_per_agent=cost or {"coder": 0.001},

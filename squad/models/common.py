@@ -4,6 +4,7 @@ Both the intent and code-security classifiers are simple Keras
 Embedding -> GlobalAveragePooling1D -> Dense text classifiers. This module
 keeps tokenizer + model construction in one place so the two tasks stay small.
 """
+
 from __future__ import annotations
 
 import tensorflow as tf
@@ -105,7 +106,8 @@ def train_classifier(
     x_val, y_val = xs[:n_val], ys[:n_val]
 
     history = model.fit(
-        x_train, y_train,
+        x_train,
+        y_train,
         validation_data=(x_val, y_val),
         epochs=epochs,
         batch_size=batch_size,

@@ -15,10 +15,35 @@ Guardrails (rule 1 style, fail closed):
 from __future__ import annotations
 
 import re
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from enum import IntEnum
 from pathlib import Path
-from typing import Sequence
+
+# Directory names to skip when walking a repo tree (dependency/build/cache trees).
+_IGNORE_DIRS = frozenset(
+    {
+        ".git",
+        ".hg",
+        ".svn",
+        ".venv",
+        "venv",
+        "env",
+        "__pycache__",
+        ".mypy_cache",
+        ".pytest_cache",
+        ".ruff_cache",
+        ".tox",
+        "node_modules",
+        "site-packages",
+        ".idea",
+        ".vscode",
+        "dist",
+        "build",
+        ".eggs",
+        "target",
+    }
+)
 
 __all__ = ["Severity", "Finding", "scan_paths", "render_report", "AuditRecord"]
 
@@ -94,9 +119,7 @@ DANGEROUS_EVAL_PATTERNS = {
         re.compile(r"eval\("),
         re.compile(r"new Function\("),
     ),
-    "php": (
-        re.compile(r"eval\("),
-    ),
+    "php": (re.compile(r"eval\("),),
 }
 
 
@@ -135,10 +158,13 @@ def _lang_for_path(path: Path) -> str | None:
 # Core scanning logic
 # ---------------------------------------------------------------------------
 
-def scan_paths(paths: Sequence[str | Path],
-               secret_scan: bool = True,
-               insecure_http: bool = True,
-               dangerous_eval: bool = True) -> tuple[list[Finding], AuditRecord]:
+
+def scan_paths(
+    paths: Sequence[str | Path],
+    secret_scan: bool = True,
+    insecure_http: bool = True,
+    dangerous_eval: bool = True,
+) -> tuple[list[Finding], AuditRecord]:
     """Scan paths for code anti-patterns.
 
     Authorization gate: at least one path must be supplied.
@@ -172,16 +198,12 @@ def scan_paths(paths: Sequence[str | Path],
     audit = AuditRecord(
         targets=tuple(targets),
         findings=len(all_findings),
-        severity_highest=max((f.severity for f in all_findings), default=Severity.INFO).name
-        if all_findings else "INFO",
+        severity_highest=max((f.severity for f in all_findings), default=Severity.INFO).name if all_findings else "INFO",
     )
     return all_findings, audit
 
 
-def _scan_file(path: Path,
-               secret_scan: bool,
-               insecure_http: bool,
-               dangerous_eval: bool) -> list[Finding]:
+def _scan_file(path: Path, secret_scan: bool, insecure_http: bool, dangerous_eval: bool) -> list[Finding]:
     """Apply all relevant checks to *path*."""
     findings: list[Finding] = []
     try:
@@ -196,27 +218,31 @@ def _scan_file(path: Path,
         for i, line in enumerate(text.splitlines(), start=1):
             for regex in SECRET_PATTERNS:
                 if regex.search(line):
-                    findings.append(Finding(
-                        title="Potential hardcoded secret/key",
-                        severity=Severity.LOW,
-                        detail=regex.pattern,
-                        evidence=line.strip()[:120],
-                        file=str(path),
-                        line=i,
-                    ))
+                    findings.append(
+                        Finding(
+                            title="Potential hardcoded secret/key",
+                            severity=Severity.LOW,
+                            detail=regex.pattern,
+                            evidence=line.strip()[:120],
+                            file=str(path),
+                            line=i,
+                        )
+                    )
 
     # Insecure HTTP (all languages)
     if insecure_http:
         for i, line in enumerate(text.splitlines(), start=1):
             if INSECURE_HTTP_RE.search(line):
-                findings.append(Finding(
-                    title="Potential insecure HTTP URL",
-                    severity=Severity.LOW,
-                    detail="Found non-localhost HTTP URL in source",
-                    evidence=line.strip()[:120],
-                    file=str(path),
-                    line=i,
-                ))
+                findings.append(
+                    Finding(
+                        title="Potential insecure HTTP URL",
+                        severity=Severity.LOW,
+                        detail="Found non-localhost HTTP URL in source",
+                        evidence=line.strip()[:120],
+                        file=str(path),
+                        line=i,
+                    )
+                )
 
     # Dangerous eval/exec (language-specific)
     if dangerous_eval and lang in DANGEROUS_EVAL_PATTERNS:
@@ -224,14 +250,16 @@ def _scan_file(path: Path,
             for regex in DANGEROUS_EVAL_PATTERNS[lang]:
                 if regex.search(line):
                     sev = Severity.HIGH if "exec" in regex.pattern else Severity.CRITICAL
-                    findings.append(Finding(
-                        title=f"Dangerous pattern in {lang}: {regex.pattern}",
-                        severity=sev,
-                        detail=regex.pattern,
-                        evidence=line.strip()[:120],
-                        file=str(path),
-                        line=i,
-                    ))
+                    findings.append(
+                        Finding(
+                            title=f"Dangerous pattern in {lang}: {regex.pattern}",
+                            severity=sev,
+                            detail=regex.pattern,
+                            evidence=line.strip()[:120],
+                            file=str(path),
+                            line=i,
+                        )
+                    )
 
     return findings
 
@@ -239,6 +267,7 @@ def _scan_file(path: Path,
 # ---------------------------------------------------------------------------
 # Report rendering
 # ---------------------------------------------------------------------------
+
 
 def render_report(findings: list[Finding]) -> str:
     """Render findings as Markdown, suitable for TUI display or writing to file."""
@@ -292,12 +321,15 @@ def render_report(findings: list[Finding]) -> str:
 # CLI entry point
 # ---------------------------------------------------------------------------
 
-def run_scan_cli(path: str,
-                 secrets: bool = True,
-                 insecure_http: bool = True,
-                 dangerous_eval: bool = True,
-                 report: str | None = None,
-                 state: str = "") -> None:
+
+def run_scan_cli(
+    path: str,
+    secrets: bool = True,
+    insecure_http: bool = True,
+    dangerous_eval: bool = True,
+    report: str | None = None,
+    state: str = "",
+) -> None:
     """Run a devhelper scan from CLI."""
     import json
 
@@ -326,6 +358,7 @@ def run_scan_cli(path: str,
     # Write audit
     try:
         from squad.audit import default_audit_path
+
         audit_path = default_audit_path()
         with open(audit_path, "a", encoding="utf-8") as fh:
             fh.write(json.dumps(audit.as_dict()) + "\n")

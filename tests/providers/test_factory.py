@@ -1,8 +1,8 @@
 """Tests for the provider factory (multi-provider / any-key resolution)."""
+
 from __future__ import annotations
 
 from pathlib import Path
-import pytest
 
 from squad.providers import factory
 from squad.providers.anthropic import AnthropicProvider
@@ -31,6 +31,7 @@ def test_resolve_preferred_unknown_falls_back():
 
 def test_resolve_picks_first_available_key(monkeypatch):
     import squad.config.data as cdata
+
     monkeypatch.setattr(cdata, "data_dir", lambda: Path("nonexistent-dir-for-tests"))
     monkeypatch.setenv("GROQ_API_KEY", "grok-test")
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
@@ -43,11 +44,21 @@ def test_resolve_picks_first_available_key(monkeypatch):
 
 def test_resolve_no_keys_returns_free_local(monkeypatch):
     import squad.config.data as cdata
+
     monkeypatch.setattr(cdata, "data_dir", lambda: Path("nonexistent-dir-for-tests"))
     # No keys set -> prefer a free local endpoint (no key needed).
-    for k in ("OPENAI_API_KEY", "OPENROUTER_API_KEY", "ANTHROPIC_API_KEY",
-              "GROQ_API_KEY", "GEMINI_API_KEY", "MISTRAL_API_KEY",
-              "TOGETHER_API_KEY", "FIREWORKS_API_KEY", "OLLAMA_API_KEY", "SQUAD_LLM_PROVIDER"):
+    for k in (
+        "OPENAI_API_KEY",
+        "OPENROUTER_API_KEY",
+        "ANTHROPIC_API_KEY",
+        "GROQ_API_KEY",
+        "GEMINI_API_KEY",
+        "MISTRAL_API_KEY",
+        "TOGETHER_API_KEY",
+        "FIREWORKS_API_KEY",
+        "OLLAMA_API_KEY",
+        "SQUAD_LLM_PROVIDER",
+    ):
         monkeypatch.delenv(k, raising=False)
     name, _key, spec = factory.resolve_provider()
     assert spec.free is True
@@ -56,6 +67,7 @@ def test_resolve_no_keys_returns_free_local(monkeypatch):
 
 def test_resolve_config_provider_wins(monkeypatch):
     import squad.config.data as cdata
+
     monkeypatch.setattr(cdata, "data_dir", lambda: Path("nonexistent-dir-for-tests"))
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     monkeypatch.delenv("SQUAD_LLM_PROVIDER", raising=False)
@@ -64,12 +76,6 @@ def test_resolve_config_provider_wins(monkeypatch):
 
 
 def test_build_provider_classes():
-    assert isinstance(
-        factory.build_provider("anthropic", "sk-x", None), AnthropicProvider
-    )
-    assert isinstance(
-        factory.build_provider("openai", "sk-x", None), OpenAICompatibleProvider
-    )
-    assert isinstance(
-        factory.build_provider("ollama", "", None), OpenAICompatibleProvider
-    )
+    assert isinstance(factory.build_provider("anthropic", "sk-x", None), AnthropicProvider)
+    assert isinstance(factory.build_provider("openai", "sk-x", None), OpenAICompatibleProvider)
+    assert isinstance(factory.build_provider("ollama", "", None), OpenAICompatibleProvider)

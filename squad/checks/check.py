@@ -74,9 +74,7 @@ def run_checks(repo_config: dict, policy: Policy, cwd: str, adapter=None) -> lis
             )
             continue
 
-        result: ProcessResult = run_command(
-            resolved, cwd=cwd, isolation_level=0, is_agent_code=False, adapter=adapter
-        )
+        result: ProcessResult = run_command(resolved, cwd=cwd, isolation_level=0, is_agent_code=False, adapter=adapter)
         results.append(
             CheckResult(
                 name,

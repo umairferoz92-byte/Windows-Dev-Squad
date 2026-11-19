@@ -3,6 +3,7 @@
 These generators produce small, deterministic example sets so the pipeline runs
 out-of-the-box. Replace them with real loaders (CSV/JSONL) when you have data.
 """
+
 from __future__ import annotations
 
 import random
@@ -199,13 +200,13 @@ _SECURITY_EXAMPLES: list[tuple[str, int]] = [
     ("eval(request.args.get('code'))", 1),
     ("exec(user_input)", 1),
     ("os.system('rm -rf /' + user_input)", 1),
-    ("conn.execute(\"SELECT * FROM t WHERE id=\" + user_id)", 1),
+    ('conn.execute("SELECT * FROM t WHERE id=" + user_id)', 1),
     ("pickle.loads(untrusted_bytes)", 1),
     ("render_template_string(user_html)", 1),
     ("subprocess.call('curl ' + url, shell=True)", 1),
-    ("query = f\"SELECT * FROM users WHERE id={uid}\"", 1),
+    ('query = f"SELECT * FROM users WHERE id={uid}"', 1),
     ("cmd = 'ping ' + host; os.system(cmd)", 1),
-    ("html = f\"<div>{user_comment}</div>\"; return html", 1),
+    ('html = f"<div>{user_comment}</div>"; return html', 1),
     ("conn.execute('DELETE FROM t WHERE id=' + str(req_id))", 1),
     ("hash = md5(password).hexdigest()", 1),
     ("loads(request.data)", 1),
@@ -235,7 +236,7 @@ _SECURITY_EXAMPLES: list[tuple[str, int]] = [
 
 def security_dataset(n_per_class: int = 18, seed: int = 11):
     """Return (texts, labels) of code snippets; label 1 = vulnerable."""
-    rng = random.Random(seed)
+    random.Random(seed)
     texts: list[str] = []
     labels: list[int] = []
     for snip, lab in _SECURITY_EXAMPLES:

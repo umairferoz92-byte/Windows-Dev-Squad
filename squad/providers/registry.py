@@ -2,12 +2,14 @@
 
 Register providers by name. The default OpenRouter provider is registered on import,
 but any module can register additional providers. Lookup is case-insensitive."""
+
 from __future__ import annotations
 
 _PROVIDERS: dict[str, type] = {}
 
 # Default OpenRouter provider — registered on import
-from squad.providers.openrouter import OpenRouterProvider as _OpenRouterProvider
+from squad.providers.openrouter import OpenRouterProvider as _OpenRouterProvider  # noqa: E402  # avoids circular import; registered after _PROVIDERS
+
 _PROVIDERS["openrouter"] = _OpenRouterProvider
 
 
@@ -23,9 +25,7 @@ def get_provider(name: str, **kwargs):
     """
     cls = _PROVIDERS.get(name.lower())
     if cls is None:
-        raise ValueError(
-            f"unknown provider '{name}' (allowed: {sorted(_PROVIDERS)})"
-        )
+        raise ValueError(f"unknown provider '{name}' (allowed: {sorted(_PROVIDERS)})")
     return cls(**kwargs)
 
 

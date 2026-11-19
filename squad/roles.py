@@ -15,15 +15,20 @@ import hashlib
 import json
 import os
 from pathlib import Path
-from typing import Optional
 
 # Roles understood by the tool.
 ROLES = ("owner", "operator", "auditor")
 
 # Role access matrix.
 ACCESS = {
-    "owner": {"add_target", "install_tools", "scan_active", "scan_intrusive",
-              "export_audit", "manage_roles"},
+    "owner": {
+        "add_target",
+        "install_tools",
+        "scan_active",
+        "scan_intrusive",
+        "export_audit",
+        "manage_roles",
+    },
     "operator": {"scan_active", "scan_passive", "export_audit"},
     "auditor": {"export_audit"},  # read-only: cannot change targets or scan
 }
@@ -34,7 +39,7 @@ def default_roles_path() -> str:
     return os.path.join(base, "roles.json")
 
 
-def current_role(path: Optional[str] = None) -> str:
+def current_role(path: str | None = None) -> str:
     p = path or default_roles_path()
     if os.path.exists(p):
         try:
@@ -44,7 +49,7 @@ def current_role(path: Optional[str] = None) -> str:
     return "owner"
 
 
-def set_role(role: str, path: Optional[str] = None) -> str:
+def set_role(role: str, path: str | None = None) -> str:
     if role not in ROLES:
         raise ValueError(f"invalid role: {role}")
     p = Path(path or default_roles_path())
@@ -53,13 +58,13 @@ def set_role(role: str, path: Optional[str] = None) -> str:
     return role
 
 
-def can(permission: str, role: Optional[str] = None) -> bool:
+def can(permission: str, role: str | None = None) -> bool:
     r = role or current_role()
     return permission in ACCESS.get(r, set())
 
 
 def _hash_line(line: str, prev_hash: str) -> str:
-    return hashlib.sha256(f"{prev_hash}|{line}".encode("utf-8")).hexdigest()
+    return hashlib.sha256(f"{prev_hash}|{line}".encode()).hexdigest()
 
 
 def export_audit(audit_lines: list[str]) -> str:
@@ -92,7 +97,7 @@ def verify_audit_export(export_text: str) -> tuple[bool, int]:
     for line in export_text.splitlines():
         line = line.rstrip("\n")
         if line.startswith("# signed-audit "):
-            footer = json.loads(line[len("# signed-audit "):])
+            footer = json.loads(line[len("# signed-audit ") :])
             return prev == footer["chain_root"] and count == footer["lines"], count
         if " " in line:
             h, rest = line.split(" ", 1)

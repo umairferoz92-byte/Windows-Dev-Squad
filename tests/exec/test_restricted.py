@@ -1,9 +1,10 @@
 """Restricted-token sandbox (Feature 4): limits and readiness, unit-tested."""
+
 from squad.exec.windows.restricted import (
     JOB_OBJECT_LIMIT_ACTIVE_PROCESS,
+    JOB_OBJECT_LIMIT_JOB_TIME,
     JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE,
     JOB_OBJECT_LIMIT_PROCESS_MEMORY,
-    JOB_OBJECT_LIMIT_JOB_TIME,
     RestrictedLaunchPlan,
     level3_ready,
     plan_launch,
@@ -51,12 +52,12 @@ def test_appcontainer_no_network_flag():
 
 def test_level3_readiness_requires_verified_marker(tmp_path):
     marker = tmp_path / "squad" / "level3.json"
-    assert level3_ready(marker) is False          # missing
+    assert level3_ready(marker) is False  # missing
     marker.parent.mkdir(parents=True, exist_ok=True)
     marker.write_text("unverified", encoding="utf-8")
-    assert level3_ready(marker) is False          # present but not verified
+    assert level3_ready(marker) is False  # present but not verified
     marker.write_text("verified", encoding="utf-8")
-    assert level3_ready(marker) is True           # verified
+    assert level3_ready(marker) is True  # verified
 
 
 def test_marker_path_lives_under_squad_dir():

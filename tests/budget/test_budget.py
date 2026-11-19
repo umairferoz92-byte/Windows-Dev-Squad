@@ -75,9 +75,7 @@ def test_warns_at_50_and_80_percent():
 
 def test_spike_breaker_pauses():
     clock = [1000.0]
-    m = BudgetManager(
-        BudgetLimits(spike_window_seconds=300, spike_limit=0.002), PRICES, clock=lambda: clock[0]
-    )
+    m = BudgetManager(BudgetLimits(spike_window_seconds=300, spike_limit=0.002), PRICES, clock=lambda: clock[0])
     est = m.preflight("a", "openrouter", MODEL, 1000, 0)  # 0.001
     for t in (1000.0, 1010.0, 1020.0):
         clock[0] = t

@@ -40,13 +40,10 @@ def run_command(
     if is_agent_code:
         if isolation_level is None or isolation_level < MIN_AGENT_ISOLATION:
             raise IsolationError(
-                "agent code must never run in the user's own account "
-                f"(requested level {isolation_level}, minimum {MIN_AGENT_ISOLATION})"
+                f"agent code must never run in the user's own account (requested level {isolation_level}, minimum {MIN_AGENT_ISOLATION})"
             )
         if not ad.supports_isolation(isolation_level):
-            raise IsolationError(
-                f"isolation level {isolation_level} is not available on this machine"
-            )
+            raise IsolationError(f"isolation level {isolation_level} is not available on this machine")
 
     final_env = scrubbed_env()
     if env:

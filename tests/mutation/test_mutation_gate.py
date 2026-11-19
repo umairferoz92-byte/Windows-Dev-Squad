@@ -2,10 +2,8 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
-from squad.mutation_test import compute_hash, python_mutators, run_mutations
 from squad.dev import DeveloperAssistant, _sample_arg
+from squad.mutation_test import compute_hash, python_mutators, run_mutations
 
 
 def test_compute_hash_stable():
@@ -18,9 +16,7 @@ def test_mutators_change_source():
     assert len(mutators) >= 4
     # Find at least one mutator that modifies a representative source.
     source = "x = True\nif x:\n    pass\n"
-    found = any(
-        (m(source) is not None) for _, m in mutators
-    )
+    found = any((m(source) is not None) for _, m in mutators)
     assert found
 
 

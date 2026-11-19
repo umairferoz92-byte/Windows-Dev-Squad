@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import sys
+from datetime import UTC
 from pathlib import Path
 
 import typer
@@ -96,15 +97,9 @@ def check_command(
 @app.command(name="cost")
 def cost_command(
     by: str = typer.Option("day", "--by", help="Group by: day, task, agent, provider."),
-    reconcile: str = typer.Option(
-        None, "--reconcile", help="Reconcile: provider=amount (e.g. openrouter=12.34)."
-    ),
-    ledger_path: str = typer.Option(
-        None, "--ledger", help="Ledger path (default per-OS data dir)."
-    ),
-    retention_days: int = typer.Option(
-        None, "--retention-days", help="Prune ledger entries older than this many days."
-    ),
+    reconcile: str = typer.Option(None, "--reconcile", help="Reconcile: provider=amount (e.g. openrouter=12.34)."),
+    ledger_path: str = typer.Option(None, "--ledger", help="Ledger path (default per-OS data dir)."),
+    retention_days: int = typer.Option(None, "--retention-days", help="Prune ledger entries older than this many days."),
 ) -> None:
     """Show cost totals from the ledger, or reconcile against provider billing."""
     from squad.budget.ledger import Ledger, default_ledger_path
@@ -115,9 +110,7 @@ def cost_command(
     if retention_days:
         pruned = ledger.prune(retention_days)
         if pruned:
-            console.print(
-                f"pruned {pruned} old ledger entrie(s) (retention).", markup=False
-            )
+            console.print(f"pruned {pruned} old ledger entrie(s) (retention).", markup=False)
     try:
         if reconcile:
             provider, _, amount = reconcile.partition("=")
@@ -127,8 +120,7 @@ def cost_command(
             gap = abs(ledger_cost - billing) / billing if billing else float("inf")
             status = "ok" if gap <= 0.10 else f"GAP {gap * 100:.1f}%"
             console.print(
-                f"ledger[{provider}] = {ledger_cost:.6f}, billing = {billing:.6f}, "
-                f"gap = {gap * 100:.1f}% ({status})",
+                f"ledger[{provider}] = {ledger_cost:.6f}, billing = {billing:.6f}, gap = {gap * 100:.1f}% ({status})",
                 markup=False,
             )
         else:
@@ -139,8 +131,7 @@ def cost_command(
                 raise typer.Exit(0)
             for row in totals:
                 console.print(
-                    f"{row['key']}: {row['cost']:.4f} "
-                    f"({row['tokens_in']} in / {row['tokens_out']} out)",
+                    f"{row['key']}: {row['cost']:.4f} ({row['tokens_in']} in / {row['tokens_out']} out)",
                     markup=False,
                 )
     finally:
@@ -149,14 +140,12 @@ def cost_command(
 
 @app.command(name="providers")
 def providers_command(
-    test: bool = typer.Option(
-        False, "--test", help="Make one tiny real-key smoke call (opt-in; never in CI)."
-    ),
-    model: str = typer.Option(
-        "", "--model", help="Model to test (defaults to first allowed worker model)."
-    ),
+    test: bool = typer.Option(False, "--test", help="Make one tiny real-key smoke call (opt-in; never in CI)."),
+    model: str = typer.Option("", "--model", help="Model to test (defaults to first allowed worker model)."),
     provider: str = typer.Option(
-        "", "--provider", help="Provider to use (openai, anthropic, openrouter, groq, gemini, ollama, lmstudio, ...). Defaults to the first key found."
+        "",
+        "--provider",
+        help="Provider to use (openai, anthropic, openrouter, groq, gemini, ollama, lmstudio, ...). Defaults to the first key found.",
     ),
 ) -> None:
     """Provider management. `squad providers test` makes one tiny real call."""
@@ -165,6 +154,7 @@ def providers_command(
     console = Console()
     if not test:
         from squad.providers import factory
+
         names = ", ".join(factory.provider_names())
         console.print(
             f"Available providers: {names}. "
@@ -190,16 +180,13 @@ def providers_command(
     allowed = all_allowed_models(models_config)
     target = model or next(iter(sorted(role_allowed_models(models_config, "worker"))), "")
     if not target or target not in allowed:
-        console.print(
-            "[red]no allowed model configured (check squad.yaml models)[/red]", markup=False
-        )
+        console.print("[red]no allowed model configured (check squad.yaml models)[/red]", markup=False)
         raise typer.Exit(1)
 
     name, api_key, spec = factory.resolve_provider(preferred=provider or None, config=models_config)
     if not api_key and not spec.free:
         console.print(
-            f"[red]{spec.key_env} is not set (.env or Credential Manager) — "
-            f"no key for provider '{name}'[/red]",
+            f"[red]{spec.key_env} is not set (.env or Credential Manager) — no key for provider '{name}'[/red]",
             markup=False,
         )
         raise typer.Exit(1)
@@ -224,9 +211,7 @@ def providers_command(
 @app.command(name="audit")
 def audit_command(
     path: str = typer.Option(None, "--path", help="Audit log path (default per-OS data dir)."),
-    retention_days: int = typer.Option(
-        None, "--retention-days", help="Archive audit entries older than this many days."
-    ),
+    retention_days: int = typer.Option(None, "--retention-days", help="Archive audit entries older than this many days."),
 ) -> None:
     """Show the audit log's latest hash and integrity."""
     from squad.audit.audit import AuditLog, default_audit_path
@@ -237,9 +222,7 @@ def audit_command(
     if retention_days:
         archived = archive_audit(path or default_audit_path(), retention_days)
         if archived:
-            console.print(
-                f"archived {archived} old audit entrie(s) (retention).", markup=False
-            )
+            console.print(f"archived {archived} old audit entrie(s) (retention).", markup=False)
     console.print(f"latest hash: {log.latest_hash or '(empty)'}", markup=False)
     console.print(f"integrity: {'ok' if log.verify() else 'TAMPERED'}", markup=False)
 
@@ -248,9 +231,7 @@ def audit_command(
 def run_cmd(
     task: str = typer.Argument(..., help="Development task to assign to the crew."),
     config: str = typer.Option("squad.yaml", "--config", help="Path to squad.yaml."),
-    dry_run: bool = typer.Option(
-        False, "--dry-run", help="Estimate cost/crew without calling any model."
-    ),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Estimate cost/crew without calling any model."),
     agents: int = typer.Option(5, "--agents", help="Crew size (1..max_agents)."),
     names: str = typer.Option("", "--names", help="Optional comma-separated crew names."),
 ) -> None:
@@ -271,9 +252,7 @@ def run_cmd(
         worker = sorted((load_repo_config(config).get("models") or {}).get("worker", []))
         model = worker[0] if worker else ""
         est = estimate_run_cost(crew, prices, model) if model else None
-        console.print(
-            f"crew ({len(crew)}): " + ", ".join(f"{a.name}({a.role})" for a in crew), markup=False
-        )
+        console.print(f"crew ({len(crew)}): " + ", ".join(f"{a.name}({a.role})" for a in crew), markup=False)
         if est is not None:
             console.print(f"estimated cost (estimate, not a quote): ${est:.6f}", markup=False)
         else:
@@ -304,9 +283,7 @@ def run_cmd(
     worker = sorted(role_allowed_models(config_data.get("models") or {}, "worker"))
     model = worker[0] if worker else ""
     if not model:
-        console.print(
-            "[red]no worker model configured (check squad.yaml models)[/red]", markup=False
-        )
+        console.print("[red]no worker model configured (check squad.yaml models)[/red]", markup=False)
         raise typer.Exit(1)
 
     # Resolve provider + key via the factory; use the repo models provider.
@@ -381,9 +358,7 @@ def status_command(
 @app.command(name="queue")
 def queue_command(
     task: str = typer.Argument(None, help="Task to enqueue (omit to list)."),
-    queue_path: str = typer.Option(
-        None, "--queue", help="Queue file path (default per-OS data dir)."
-    ),
+    queue_path: str = typer.Option(None, "--queue", help="Queue file path (default per-OS data dir)."),
     digest: bool = typer.Option(False, "--digest", help="Print the morning digest."),
 ) -> None:
     """List, enqueue, or digest the overnight job queue."""
@@ -412,9 +387,7 @@ def remote_command(
 
     console = Console()
     if host not in ("127.0.0.1", "localhost"):
-        console.print(
-            "[red]refusing: the remote gateway must bind to 127.0.0.1 only[/red]", markup=False
-        )
+        console.print("[red]refusing: the remote gateway must bind to 127.0.0.1 only[/red]", markup=False)
         raise typer.Exit(2)
 
     if sub == "on":
@@ -465,13 +438,9 @@ def _force_utf8_stdio() -> None:
             pass
 
 
-
-
-
-
-
 # Security Guard commands (module-level, so typer can route subcommands)
 security_app = typer.Typer(help="Security operations", no_args_is_help=True)
+
 
 @security_app.command("check-tools")
 def security_check_tools_command(
@@ -482,11 +451,13 @@ def security_check_tools_command(
     Displays a status table of found/missing tools, and optionally prompts
     per missing tool to install it (with audit logging).
     """
+    import subprocess
+
     from rich.console import Console
     from rich.table import Table
-    from squad.tools.manifest import check_all_tools, BLUEPRINT_MANIFEST
+
     from squad.audit.audit import AuditLog, default_audit_path
-    import subprocess
+    from squad.tools.manifest import BLUEPRINT_MANIFEST, check_all_tools
 
     console = Console()
     statuses = check_all_tools(BLUEPRINT_MANIFEST)
@@ -518,22 +489,41 @@ def security_check_tools_command(
             if ans in ("y", "yes"):
                 console.print(f"Running: {st.install_cmd}...", markup=False)
                 try:
-                    res = subprocess.run(st.install_cmd, shell=True, capture_output=True, text=True, timeout=300)
+                    res = subprocess.run(st.install_cmd, shell=True, capture_output=True, text=True, timeout=300)  # nosec B602  # tool installer commands (winget/choco/apt) need a shell; interactive, user-initiated
                     if res.returncode == 0:
                         console.print(f"[green]Successfully installed {st.display}[/green]", markup=False)
-                        audit.append("tools.alfred_install", tool=st.name, command=st.install_cmd, status="success")
+                        audit.append(
+                            "tools.alfred_install",
+                            tool=st.name,
+                            command=st.install_cmd,
+                            status="success",
+                        )
                     else:
                         console.print(f"[red]Install returned exit code {res.returncode}[/red]", markup=False)
-                        audit.append("tools.alfred_install", tool=st.name, command=st.install_cmd, status="failed", code=res.returncode)
+                        audit.append(
+                            "tools.alfred_install",
+                            tool=st.name,
+                            command=st.install_cmd,
+                            status="failed",
+                            code=res.returncode,
+                        )
                 except Exception as exc:
                     console.print(f"[red]Install error: {exc}[/red]", markup=False)
-                    audit.append("tools.alfred_install", tool=st.name, command=st.install_cmd, status="error", error=str(exc))
+                    audit.append(
+                        "tools.alfred_install",
+                        tool=st.name,
+                        command=st.install_cmd,
+                        status="error",
+                        error=str(exc),
+                    )
             else:
                 console.print(f"Skipped {st.display}.", markup=False)
                 audit.append("tools.alfred_install", tool=st.name, command=st.install_cmd, status="skipped")
     elif missing:
-        console.print("Run `squad security check-tools --install` to interactively install missing tools.", markup=False)
-
+        console.print(
+            "Run `squad security check-tools --install` to interactively install missing tools.",
+            markup=False,
+        )
 
 
 @security_app.command("add-target")
@@ -544,9 +534,10 @@ def security_add_target_command() -> None:
     re-prompts to confirm, computes a sha256 of the record, then writes it to
     ``authorized_targets.yaml`` and the hash-chained audit log.
     """
-    from squad.security_authorized import _append_authorized
     import hashlib
-    from datetime import datetime, timezone
+    from datetime import datetime
+
+    from squad.security_authorized import _append_authorized
 
     ownership = input("Ownership statement: ").strip()
     if not ownership:
@@ -563,7 +554,7 @@ def security_add_target_command() -> None:
         print("[refused] target strings did not match.")
         return
 
-    added_at = datetime.now(timezone.utc).isoformat()
+    added_at = datetime.now(UTC).isoformat()
     sha256_input = target + ownership + added_at
     sha256 = hashlib.sha256(sha256_input.encode("utf-8")).hexdigest()
 
@@ -616,6 +607,7 @@ def security_nightwing_command(
     if "c" in phases.lower():
         # Validate authorization up-front before prompting
         from squad.security_authorized import is_authorized
+
         if not is_authorized(target):
             print(f"[refused] target '{target}' is not authorized.")
             return
@@ -653,8 +645,8 @@ def security_report_command(
     """
     from squad.agent.nightwing import Nightwing
     from squad.agent.oracle import Oracle
-    from squad.store.history import ScanStore
     from squad.config.squadcfg import load_config
+    from squad.store.history import ScanStore
 
     cfg = load_config()
     if not phases:
@@ -734,6 +726,7 @@ def security_report_command(
     # Optional notification
     if cfg.notify_on_complete:
         from squad.notify import scan_completed
+
         counts = store.count_by_severity(run_id)
         risk = "high" if counts.get("high") or counts.get("critical") else "low"
         scan_completed(target, len(findings), risk, channel=cfg.notify_channel)
@@ -793,18 +786,19 @@ def security_diff_command(
 @security_app.command("status")
 def security_status_command() -> None:
     """Live overview: latest run, finding counts, active kill-switch runs."""
-    from squad.store.history import ScanStore
     from squad.agent.rate_limit import GLOBAL_KILL_SWITCH
+    from squad.store.history import ScanStore
 
     store = ScanStore()
     s = store.status_summary()
     print(f"Total runs: {s['total_runs']}")
     print(f"Latest run: {s['latest_run']} target={s['latest_target']}")
     if s["latest_severity"]:
-        print("  latest severity:",
-              " ".join(f"{k}={v}" for k, v in s["latest_severity"].items()))
-    print("  open findings per recent run:",
-          ", ".join(f"{k}={v}" for k, v in s["open_by_run"].items()))
+        print("  latest severity:", " ".join(f"{k}={v}" for k, v in s["latest_severity"].items()))
+    print(
+        "  open findings per recent run:",
+        ", ".join(f"{k}={v}" for k, v in s["open_by_run"].items()),
+    )
     active = GLOBAL_KILL_SWITCH.active()
     print(f"Active scan processes: {active or 'none'}")
 
@@ -864,26 +858,32 @@ def security_export_command(
     out: str = typer.Option("", "--out", help="Write to file (default stdout)."),
 ) -> None:
     """Export a run's findings for ticketing/audit (CSV/JIRA/JSON)."""
-    from squad.store.history import ScanStore
-    from squad.store.history import ScanStore
     from squad.compliance import to_csv, to_jira_json
     from squad.security_findings import SecurityFinding, SecuritySeverity
-
-    from squad.security_findings import SecurityFinding, SecuritySeverity
+    from squad.store.history import ScanStore
 
     store = ScanStore()
     rows = store.run_findings(run_id)
-    findings = [SecurityFinding(
-        tool=r["tool"], severity=SecuritySeverity(r["severity"]), description=r["description"],
-        file_or_endpoint=r["file_or_endpoint"], evidence_snippet=r["evidence_snippet"],
-        cwe=r["cwe"], owasp_category=r["owasp_category"], remediation=r["remediation"],
-    ) for r in rows]
+    findings = [
+        SecurityFinding(
+            tool=r["tool"],
+            severity=SecuritySeverity(r["severity"]),
+            description=r["description"],
+            file_or_endpoint=r["file_or_endpoint"],
+            evidence_snippet=r["evidence_snippet"],
+            cwe=r["cwe"],
+            owasp_category=r["owasp_category"],
+            remediation=r["remediation"],
+        )
+        for r in rows
+    ]
     if fmt == "csv":
         text = to_csv(findings)
     elif fmt == "jira":
         text = to_jira_json(findings)
     else:
         from squad.agent.oracle import Oracle
+
         run = store.get_run(run_id)
         target = run["target"] if run else ""
         text = Oracle(findings=findings, target=target).to_json()
@@ -899,6 +899,7 @@ def security_export_command(
 def security_doctor_command() -> None:
     """Run the squad environment self-check (tools, DB, data dir)."""
     from squad.doctor import print_doctor
+
     print_doctor()
 
 
@@ -915,7 +916,7 @@ def security_role_command(
             print(f"[ok] role set to {set_to}.")
         except ValueError as e:
             print(f"[refused] {e}")
-            raise typer.Exit(2)
+            raise typer.Exit(2) from None
     else:
         print(f"current role: {current_role()}")
         print("  owner: full control (targets, installs, intrusive scans)")
@@ -930,7 +931,7 @@ def security_audit_export_command(
 ) -> None:
     """Produce a signed chain-of-custody export of the audit log."""
     from squad.audit.audit import AuditLog, default_audit_path
-    from squad.roles import current_role, export_audit, can
+    from squad.roles import can, current_role, export_audit
 
     if not can("export_audit"):
         print(f"[refused] role '{current_role()}' cannot export the audit log.")
@@ -953,9 +954,9 @@ def security_notify_command(
     channel: str = typer.Option("", "--channel", help="console | desktop."),
 ) -> None:
     """Send a notification for a completed scan run."""
-    from squad.store.history import ScanStore
-    from squad.notify import Notifier, scan_completed
     from squad.config.squadcfg import load_config
+    from squad.notify import scan_completed
+    from squad.store.history import ScanStore
 
     store = ScanStore()
     run = store.get_run(run_id)
@@ -973,6 +974,7 @@ def security_notify_command(
 def security_version_command() -> None:
     """Show the squad version."""
     from squad.version import __version__
+
     print(f"squad {__version__} (security squad)")
 
 
@@ -1096,6 +1098,7 @@ def intel_search_command(
 def intel_status_command() -> None:
     """Show real-time intelligence feed statistics."""
     import time
+
     from squad.intel import RealTimeIntelEngine
 
     engine = RealTimeIntelEngine()
@@ -1114,11 +1117,11 @@ app.add_typer(intel_app, name="intel")
 
 @app.command(name="chat")
 def chat_command(
-    message: str = typer.Option(
-        None, "--message", "-m", help="One-shot: handle this message and exit (no REPL)."
-    ),
+    message: str = typer.Option(None, "--message", "-m", help="One-shot: handle this message and exit (no REPL)."),
     provider: str = typer.Option(
-        "", "--provider", help="LLM provider for research answers (e.g. ollama, openai, openrouter, anthropic). Sets SQUAD_LLM_PROVIDER."
+        "",
+        "--provider",
+        help="LLM provider for research answers (e.g. ollama, openai, openrouter, anthropic). Sets SQUAD_LLM_PROVIDER.",
     ),
 ) -> None:
     """Interactive chatbot: offline commands + LLM-backed research.
@@ -1128,6 +1131,7 @@ def chat_command(
     """
     if provider:
         import os
+
         os.environ["SQUAD_LLM_PROVIDER"] = provider
     from squad.chat import chat_loop
 

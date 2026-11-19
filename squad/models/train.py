@@ -8,6 +8,7 @@ Outputs:
   squad/models/artifacts/intent/       intent classifier (Keras model + vectorizer + labels)
   squad/models/artifacts/security/     security classifier (Keras model + vectorizer)
 """
+
 from __future__ import annotations
 
 import argparse
@@ -26,13 +27,9 @@ def _save(model, vec, class_names, out_dir: Path, task: str) -> None:
     model.save(out_dir / "model.keras")
     # Persist the vectorizer vocabulary + config so inference can rebuild it.
     vocab = vec.get_vocabulary()
-    (out_dir / "vocab.json").write_text(
-        json.dumps({"task": task, "vocab": vocab}), encoding="utf-8"
-    )
+    (out_dir / "vocab.json").write_text(json.dumps({"task": task, "vocab": vocab}), encoding="utf-8")
     if class_names:
-        (out_dir / "labels.json").write_text(
-            json.dumps({"labels": class_names}), encoding="utf-8"
-        )
+        (out_dir / "labels.json").write_text(json.dumps({"labels": class_names}), encoding="utf-8")
     print(f"  saved -> {out_dir}")
 
 
@@ -50,7 +47,10 @@ def main(argv: list[str] | None = None) -> int:
         print("[intent] generating dataset + training...")
         texts, labels, classes = dataset.intent_dataset()
         model, vec, class_names, _ = train_classifier(
-            texts, labels, num_classes=len(classes), epochs=args.epochs,
+            texts,
+            labels,
+            num_classes=len(classes),
+            epochs=args.epochs,
         )
         _save(model, vec, class_names, ARTIFACTS / "intent", "intent")
 
@@ -58,7 +58,10 @@ def main(argv: list[str] | None = None) -> int:
         print("[security] generating dataset + training...")
         texts, labels = dataset.security_dataset()
         model, vec, _, _ = train_classifier(
-            texts, labels, num_classes=1, epochs=args.epochs,
+            texts,
+            labels,
+            num_classes=1,
+            epochs=args.epochs,
         )
         _save(model, vec, None, ARTIFACTS / "security", "security")
 

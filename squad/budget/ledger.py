@@ -83,18 +83,13 @@ class Ledger:
             f"FROM usage GROUP BY {expr}"  # nosec B608
         )
         rows = self._conn.execute(query).fetchall()
-        return [
-            {"key": r[0], "cost": r[1] or 0.0, "tokens_in": r[2] or 0, "tokens_out": r[3] or 0}
-            for r in rows
-        ]
+        return [{"key": r[0], "cost": r[1] or 0.0, "tokens_in": r[2] or 0, "tokens_out": r[3] or 0} for r in rows]
 
     def total_cost(self, provider: str | None = None) -> float:
         if provider is None:
             row = self._conn.execute("SELECT SUM(estimated_cost) FROM usage").fetchone()
         else:
-            row = self._conn.execute(
-                "SELECT SUM(estimated_cost) FROM usage WHERE provider = ?", (provider,)
-            ).fetchone()
+            row = self._conn.execute("SELECT SUM(estimated_cost) FROM usage WHERE provider = ?", (provider,)).fetchone()
         return float(row[0] or 0.0)
 
     def prune(self, max_age_days: int, now: float | None = None) -> int:
@@ -102,9 +97,7 @@ class Ledger:
         import time as _time
 
         cutoff = (_time.time() if now is None else now) - max_age_days * 86400
-        cur = self._conn.execute(
-            "DELETE FROM usage WHERE recorded_at < ?", (cutoff,)
-        )
+        cur = self._conn.execute("DELETE FROM usage WHERE recorded_at < ?", (cutoff,))
         self._conn.commit()
         return cur.rowcount
 

@@ -1,4 +1,5 @@
 """Every threat in docs/THREATS.md must be covered by a test or an accepted risk."""
+
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -29,11 +30,7 @@ def test_every_threat_is_covered():
 
 def test_referenced_test_files_exist():
     text = (ROOT / "docs" / "THREATS.md").read_text(encoding="utf-8")
-    refs = {
-        line.strip().removeprefix("Test: ").strip().strip("`")
-        for line in text.splitlines()
-        if line.strip().startswith("Test:")
-    }
+    refs = {line.strip().removeprefix("Test: ").strip().strip("`") for line in text.splitlines() if line.strip().startswith("Test:")}
     for ref in refs:
         assert ref, "empty Test: reference in THREATS.md"
         assert (ROOT / ref).exists(), f"missing referenced test: {ref}"

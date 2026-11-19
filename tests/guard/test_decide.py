@@ -77,17 +77,13 @@ def test_edit_file_sensitive_config_denied():
 
 
 def test_edit_file_ci_workflow_asks():
-    request = ToolRequest(
-        tool="edit_file", args={"path": "/repo/.github/workflows/ci.yml"}, cwd="/repo"
-    )
+    request = ToolRequest(tool="edit_file", args={"path": "/repo/.github/workflows/ci.yml"}, cwd="/repo")
     decision = evaluate(request, _policy(write_scope=["/repo"], sensitive_dirs=[".github"]))
     assert decision.verdict is Verdict.ASK
 
 
 def test_edit_file_traversal_asks():
-    request = ToolRequest(
-        tool="edit_file", args={"path": "/repo/src/../../etc/passwd"}, cwd="/repo"
-    )
+    request = ToolRequest(tool="edit_file", args={"path": "/repo/src/../../etc/passwd"}, cwd="/repo")
     assert evaluate(request, _policy(write_scope=["/repo/src"])).verdict is Verdict.ASK
 
 

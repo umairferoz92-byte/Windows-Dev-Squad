@@ -49,9 +49,7 @@ def remote_on(host: str, port: int, popen=None, pidfile: Path | None = None) -> 
         "stdin": subprocess.DEVNULL,
     }
     if os.name == "nt":
-        flags = getattr(subprocess, "DETACHED_PROCESS", 0) | getattr(
-            subprocess, "CREATE_NEW_PROCESS_GROUP", 0
-        )
+        flags = getattr(subprocess, "DETACHED_PROCESS", 0) | getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
         kwargs["creationflags"] = flags
     else:
         kwargs["start_new_session"] = True
@@ -89,9 +87,7 @@ def _terminate(pid: int) -> None:
     """Terminate a process, killing its tree on Windows (taskkill /T /F)."""
     if os.name == "nt":
         try:
-            subprocess.run(
-                ["taskkill", "/PID", str(pid), "/T", "/F"], capture_output=True
-            )
+            subprocess.run(["taskkill", "/PID", str(pid), "/T", "/F"], capture_output=True)
         except OSError:
             pass
     else:
